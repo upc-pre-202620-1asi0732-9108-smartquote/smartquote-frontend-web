@@ -6,7 +6,7 @@
     "node": ">=22.18.0"
   },
   "scripts": {
-    "dev": "vinext dev --host 127.0.0.1 --port 5174",
+    "dev": "vinext dev --hostname 127.0.0.1 --port 5174",
     "build": "vinext build",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint app components/smartquote lib/smartquote scripts tests",
