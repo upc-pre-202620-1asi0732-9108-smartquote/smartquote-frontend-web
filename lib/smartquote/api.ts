@@ -37,7 +37,6 @@ export function normalizeBaseUrl(value: string): string {
     .replace(/\/+$/, '')
     .replace(/\/api\/v1$/, '');
 }
-// Claims only customize navigation. Authorization always belongs to the backend.
 export function parseSession(baseUrl: string, rawToken: string): Session {
   const token = rawToken.trim().replace(/^Bearer\s+/i, '');
   try {
@@ -235,8 +234,6 @@ export class SmartQuoteApi {
     const origin = await this.scenarioById(run.scenarioId);
     if (origin.requestId !== requestId)
       throw new ApiError(400, 'La simulación pertenece a otra solicitud.');
-    // develop currently checks the historical scenario definition, not its Active status.
-    // Cross-check the current scenario as well before enabling any approval in the UI.
     return {
       ...run,
       isCurrent:

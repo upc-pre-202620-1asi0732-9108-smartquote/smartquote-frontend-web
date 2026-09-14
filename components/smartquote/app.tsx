@@ -1,4 +1,4 @@
-/* oxlint-disable react/react-compiler -- Effects hydrate browser storage and subscribe to asynchronous API data; the app is not compiled with React Compiler. */
+/* oxlint-disable react/react-compiler */
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
