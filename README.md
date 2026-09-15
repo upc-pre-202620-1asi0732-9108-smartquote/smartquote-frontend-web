@@ -100,4 +100,4 @@ Build output is static dist/. `npm run preview` serves the production build loca
 
 ## Collaboration
 
-Use develop for integration, feature branches such as codex/feature/vue-ddd for focused changes, release branches for stabilization and hotfix branches for urgent production fixes. Merge verified releases into main and back into develop. Use conventional commits and semantic versions. Group changes by completed behavior and review the diff and checks before committing or pushing.
+Use develop for integration, feature branches for focused changes, release branches for stabilization and hotfix branches for urgent production fixes. Merge verified releases into main and back into develop. Use conventional commits and semantic versions. Group changes by completed behavior and review the diff and checks before committing or pushing.

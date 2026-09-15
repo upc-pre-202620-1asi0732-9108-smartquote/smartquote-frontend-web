@@ -9,10 +9,6 @@
 
 /coverage
 
-/.next/
-/.vinext/
-/out/
-
 .DS_Store
 *.pem
 
@@ -23,13 +19,9 @@ yarn-error.log*
 
 .env*
 
-.vercel
-next-env.d.ts
 /dist/
-/.wrangler/
 /outputs/
 /work/
 
 .local/
-*.tsbuildinfo
 !.env.example

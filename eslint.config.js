@@ -2,14 +2,7 @@ import vue from "eslint-plugin-vue";
 import globals from "globals";
 export default [
   {
-    ignores: [
-      "dist/**",
-      "node_modules/**",
-      ".local/**",
-      ".next/**",
-      ".vinext/**",
-      ".wrangler/**",
-    ],
+    ignores: ["dist/**", "node_modules/**", ".local/**"],
   },
   ...vue.configs["flat/essential"],
   {
