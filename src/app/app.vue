@@ -133,7 +133,7 @@ onUnmounted(() => {
     }}</a>
     <aside class="sidebar">
       <a href="#/requests" class="brand"
-        ><span class="brand-mark"><i class="pi pi-check-circle" /></span
+        ><span class="brand-mark" aria-hidden="true"><span class="brand-bars"><i></i><i></i><i></i></span><i class="pi pi-check" /></span
         >SmartQuote</a
       >
       <p class="sidebar-caption">{{ t("workspace") }}</p>

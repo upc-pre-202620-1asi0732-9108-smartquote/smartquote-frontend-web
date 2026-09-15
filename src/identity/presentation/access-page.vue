@@ -29,7 +29,7 @@ async function submit() {
   <main class="access-page">
     <section class="access-story">
       <a class="brand" href="#/"
-        ><span class="brand-mark"><i class="pi pi-check-circle" /></span
+        ><span class="brand-mark" aria-hidden="true"><span class="brand-bars"><i></i><i></i><i></i></span><i class="pi pi-check" /></span
         >SmartQuote</a
       >
       <div>

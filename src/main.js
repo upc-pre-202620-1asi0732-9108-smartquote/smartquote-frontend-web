@@ -10,17 +10,17 @@ import "./shared/presentation/styles.css";
 const theme = definePreset(Material, {
   semantic: {
     primary: {
-      50: "{emerald.50}",
-      100: "{emerald.100}",
-      200: "{emerald.200}",
-      300: "{emerald.300}",
-      400: "{emerald.400}",
-      500: "{emerald.600}",
-      600: "{emerald.700}",
-      700: "{emerald.800}",
-      800: "{emerald.900}",
-      900: "{emerald.950}",
-      950: "{emerald.950}",
+      50: "#f2f7fa",
+      100: "#dbeaf2",
+      200: "#b9d5e5",
+      300: "#8bbbd3",
+      400: "#4c8fb4",
+      500: "#0f5b8c",
+      600: "#0c4e78",
+      700: "#093a5a",
+      800: "#07314c",
+      900: "#05263b",
+      950: "#031b2a",
     },
   },
 });
