@@ -12,27 +12,24 @@ export function normalizeBaseUrl(value) {
     .replace(/\/api\/v1$/, "");
 }
 export class Session {
-  constructor(baseUrl, rawToken) {
+  constructor(baseUrl, rawToken, user, expiresIn) {
     try {
       this.baseUrl = normalizeBaseUrl(baseUrl);
       this.token = rawToken.trim().replace(/^Bearer\s+/i, "");
-      const segment = this.token.split(".")[1];
-      const claims = JSON.parse(
-        atob(segment.replace(/-/g, "+").replace(/_/g, "/")),
-      );
       if (
-        typeof claims.sub !== "string" ||
-        !Number.isFinite(claims.exp) ||
-        claims.exp * 1000 <= Date.now()
+        !this.token ||
+        !user ||
+        typeof user.userId !== "string" ||
+        !Array.isArray(user.roles) ||
+        !Number.isFinite(expiresIn) ||
+        expiresIn <= 0
       )
         throw new Error();
-      this.userId = claims.sub;
-      this.roles = Array.isArray(claims.role)
-        ? claims.role
-        : claims.role
-          ? [claims.role]
-          : [];
-      this.expiresAt = claims.exp * 1000;
+      this.userId = user.userId;
+      this.displayName = user.displayName || user.email || user.userId;
+      this.email = user.email || "";
+      this.roles = user.roles;
+      this.expiresAt = Date.now() + expiresIn * 1000;
     } catch (error) {
       if (error instanceof DomainError) throw error;
       throw new DomainError("invalidSession");

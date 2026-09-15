@@ -1,14 +1,17 @@
 import { test, expect } from "@playwright/test";
-import { readFileSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { fixture } from "../support/pdf-fixture.js";
-const api = process.env.SMARTQUOTE_API_URL || "http://127.0.0.1:5088";
-const token = (role) =>
-  readFileSync(".local/" + role + "-token.txt", "utf8").trim();
+const credentials = {
+  production: "production@smartquote.local",
+  manager: "manager@smartquote.local",
+};
 async function signIn(page, role) {
-  await page.getByLabel("Backend address", { exact: true }).fill(api);
-  await page.getByLabel("Access token", { exact: true }).fill(token(role));
+  await page.getByLabel("Email address", { exact: true }).fill(credentials[role]);
   await page
-    .getByRole("button", { name: "Connect to SmartQuote", exact: true })
+    .getByLabel("Password", { exact: true })
+    .fill(process.env.SMARTQUOTE_BOOTSTRAP_PASSWORD || "");
+  await page
+    .getByRole("button", { name: "Sign in", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: "Sign out", exact: true }),
@@ -19,13 +22,13 @@ test("English default, Spanish persistence and responsive access screen", async 
 }) => {
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Welcome to your workspace" }),
+    page.getByRole("heading", { name: "Sign in to SmartQuote" }),
   ).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "en-US");
   await page.getByRole("combobox", { name: "Language", exact: true }).click();
   await page.getByRole("option", { name: "Español", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Bienvenido a tu espacio de trabajo" }),
+    page.getByRole("heading", { name: "Inicia sesión en SmartQuote" }),
   ).toBeVisible();
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("lang", "es-419");
@@ -36,12 +39,32 @@ test("English default, Spanish persistence and responsive access screen", async 
     ),
   ).toBe(true);
 });
+test("IAM login authenticates a production account through the local API", async ({
+  page,
+}) => {
+  test.skip(
+    process.env.SMARTQUOTE_E2E_AUTH !== "1" ||
+      !process.env.SMARTQUOTE_BOOTSTRAP_PASSWORD,
+    "Requires a local API with bootstrapped IAM accounts and SMARTQUOTE_BOOTSTRAP_PASSWORD",
+  );
+  await page.goto("/");
+  await signIn(page, "production");
+  await expect(
+    page.getByRole("button", { name: "New request", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Sign in to SmartQuote" }),
+  ).toBeVisible();
+});
 test("production creates a request and manager completes the purchasing workflow against the real API", async ({
   page,
 }) => {
   test.skip(
-    process.env.SMARTQUOTE_E2E_REAL !== "1",
-    "Requires local API and tokens from test:integration",
+    process.env.SMARTQUOTE_E2E_REAL !== "1" ||
+      !process.env.SMARTQUOTE_BOOTSTRAP_PASSWORD ||
+      process.env.SMARTQUOTE_E2E_STUB !== "1",
+    "Requires a local Stub AI backend, bootstrapped IAM accounts and SMARTQUOTE_BOOTSTRAP_PASSWORD",
   );
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -71,6 +94,9 @@ test("production creates a request and manager completes the purchasing workflow
   ).toBeEnabled();
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await signIn(page, "manager");
+  await page
+    .getByRole("button", { name: "Open " + description, exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: description, exact: true, level: 1 }),
   ).toBeVisible();

@@ -8,7 +8,7 @@ export default defineConfig({
   reporter: "list",
   outputDir: ".local/playwright-results",
   use: {
-    baseURL: "http://127.0.0.1:5174",
+    baseURL: "http://localhost:5173",
     channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
     headless: true,
     trace: "off",
@@ -17,7 +17,7 @@ export default defineConfig({
   },
   webServer: {
     command: "npm run dev",
-    url: "http://127.0.0.1:5174",
+    url: "http://localhost:5173",
     reuseExistingServer: !process.env.CI,
     timeout: 30000,
   },

@@ -169,17 +169,18 @@ test("access only allows HTTPS or loopback HTTP; roles do not bypass backend val
     "PurchaseManager",
     "test-signing-key-with-at-least-32-bytes",
   );
-  const session = new Session("http://localhost:8080", token);
+  const session = new Session(
+    "http://localhost:8080",
+    token,
+    {
+      userId: "00000000-0000-0000-0000-000000000001",
+      roles: ["PurchaseManager"],
+    },
+    600,
+  );
   assert.equal(session.manager, true);
   assert.throws(
     () =>
-      new Session(
-        "http://localhost:8080",
-        mintToken(
-          "PurchaseManager",
-          "test-signing-key-with-at-least-32-bytes",
-          { hours: -1 },
-        ),
-      ),
+      new Session("http://localhost:8080", "", { userId: "x", roles: [] }, 600),
   );
 });

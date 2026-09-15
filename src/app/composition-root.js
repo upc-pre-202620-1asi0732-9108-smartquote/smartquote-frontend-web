@@ -8,11 +8,9 @@ import { EvaluationService } from "../evaluation-simulation/application/evaluati
 import { HttpPurchaseOrderRepository } from "../purchase-ordering/infrastructure/http-purchase-order.repository.js";
 import { PurchaseOrderService } from "../purchase-ordering/application/purchase-order.service.js";
 import { SessionService } from "../identity/application/session.service.js";
-import { BrowserSessionRepository } from "../identity/infrastructure/browser-session.repository.js";
+import { AuthApiRepository } from "../identity/infrastructure/auth-api.repository.js";
 export function createSessionService() {
-  return new SessionService(new BrowserSessionRepository(), (session) =>
-    createServices(session).requests.list(),
-  );
+  return new SessionService(new AuthApiRepository());
 }
 export function createServices(session) {
   const http = new HttpClient(session);

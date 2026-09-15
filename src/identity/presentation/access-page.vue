@@ -3,26 +3,21 @@ import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
-import Textarea from "primevue/textarea";
 import Select from "primevue/select";
 import Field from "../../shared/presentation/components/form-field.vue";
 import Feedback from "../../shared/presentation/components/feedback-notice.vue";
 import Terms from "../../shared/presentation/components/terms-dialog.vue";
-const props = defineProps({ connect: { type: Function, required: true } });
+const props = defineProps({ login: { type: Function, required: true } });
 const { t, locale } = useI18n();
-const baseUrl = ref(
-  localStorage.getItem("smartquote.api") ||
-    import.meta.env.VITE_API_BASE_URL ||
-    "http://localhost:8080",
-);
-const token = ref(""),
+const email = ref(""),
+  password = ref(""),
   busy = ref(false),
   error = ref("");
 async function submit() {
   busy.value = true;
   error.value = "";
   try {
-    await props.connect(baseUrl.value, token.value);
+    await props.login(email.value, password.value);
   } catch (e) {
     error.value = t("error." + (e.code || "unexpected"));
   } finally {
@@ -61,31 +56,19 @@ async function submit() {
         <p class="muted">{{ t("accessIntro") }}</p>
         <Feedback :error="error" />
         <form @submit.prevent="submit" class="stack">
-          <Field :label="t('backendUrl')" v-slot="{ id }"
-            ><InputText
-              :id="id"
-              v-model="baseUrl"
-              type="url"
-              required
-              :disabled="busy" /></Field
-          ><Field :label="t('token')" v-slot="{ id }"
-            ><Textarea
-              :id="id"
-              v-model="token"
-              rows="4"
-              required
-              autocomplete="off"
-              :spellcheck="false"
-              :disabled="busy" /></Field
+          <Field :label="t('email')" v-slot="{ id }"
+            ><InputText :id="id" v-model="email" type="email" autocomplete="username" required :disabled="busy" /></Field
+          ><Field :label="t('password')" v-slot="{ id }"
+            ><InputText :id="id" v-model="password" type="password" autocomplete="current-password" required :disabled="busy" /></Field
           ><Button
             type="submit"
-            :label="t('connect')"
+            :label="t('signIn')"
             icon="pi pi-arrow-right"
             icon-pos="right"
             :loading="busy"
           />
         </form>
-        <p class="access-note"><i class="pi pi-lock" />{{ t("tokenNote") }}</p>
+        <p class="access-note"><i class="pi pi-lock" />{{ t("loginNote") }}</p>
         <p class="help-text">{{ t("accessHelp") }}</p>
         <Terms />
       </div>

@@ -1,5 +1,13 @@
 <script setup>
-import { computed, provide, ref, shallowRef, watch, onUnmounted } from "vue";
+import {
+  computed,
+  onMounted,
+  onUnmounted,
+  provide,
+  ref,
+  shallowRef,
+  watch,
+} from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, RouterView } from "vue-router";
 import { usePrimeVue } from "primevue/config";
@@ -14,21 +22,40 @@ import { router } from "./router.js";
 const { t, locale } = useI18n(),
   primevue = usePrimeVue();
 const auth = createSessionService();
-const session = shallowRef(auth.restore()),
+const session = shallowRef(null),
   pending = ref(0),
-  mobile = ref(false);
+  mobile = ref(false),
+  restoring = ref(true);
 const services = computed(() =>
   session.value ? createServices(session.value) : null,
 );
-async function connect(url, token) {
-  session.value = await auth.connect(url, token);
+async function login(email, password) {
+  session.value = await auth.login(email, password);
+  await router.replace("/requests");
 }
 function focusMain() {
   document.getElementById("main-content")?.focus();
 }
-function disconnect() {
-  auth.disconnect();
+async function disconnect() {
+  try {
+    await auth.logout();
+  } finally {
+    clearTimeout(timer);
+    mobile.value = false;
+    await router.replace("/");
+  }
   session.value = null;
+}
+async function renewSession() {
+  try {
+    const renewed = await auth.restore();
+    if (renewed) session.value = renewed;
+    else session.value = null;
+  } catch {
+    const remaining = session.value?.expiresAt - Date.now() || 0;
+    if (remaining > 0)
+      timer = setTimeout(renewSession, Math.min(30000, remaining));
+  }
 }
 provide("workspace", { session, services, pending, disconnect });
 let timer;
@@ -38,8 +65,8 @@ watch(
     clearTimeout(timer);
     if (s)
       timer = setTimeout(
-        disconnect,
-        Math.min(Math.max(0, s.expiresAt - Date.now()), 2147483647),
+        renewSession,
+        Math.min(Math.max(0, s.expiresAt - Date.now() - 30000), 2147483647),
       );
   },
   { immediate: true },
@@ -74,14 +101,32 @@ const links = computed(() => [
       ]
     : []),
 ]);
-const removeGuard = router.beforeEach(() => pending.value === 0);
+const removeGuard = router.beforeEach((to) => {
+  const allowedRoles = to.meta.roles;
+  if (
+    allowedRoles &&
+    (!session.value || !allowedRoles.some((role) => session.value.hasRole(role)))
+  )
+    return "/requests";
+  return true;
+});
+onMounted(async () => {
+  try {
+    session.value = await auth.restore();
+  } catch {
+    session.value = null;
+  } finally {
+    restoring.value = false;
+  }
+});
 onUnmounted(() => {
   clearTimeout(timer);
   removeGuard();
 });
 </script>
 <template>
-  <AccessPage v-if="!session" :connect="connect" />
+  <main v-if="restoring" class="access-page"><span class="muted">{{ t("restoringSession") }}</span></main>
+  <AccessPage v-else-if="!session" :login="login" />
   <div v-else class="workspace">
     <a href="#main-content" class="skip-link" @click.prevent="focusMain">{{
       t("skipContent")
@@ -102,8 +147,8 @@ onUnmounted(() => {
           session.manager ? "PM" : session.production ? "PS" : "PA"
         }}</span>
         <div>
-          <strong>{{ t("role." + session.roles[0]) }}</strong
-          ><small>{{ session.userId.slice(0, 8) }}</small>
+          <strong>{{ session.displayName }}</strong
+          ><small>{{ t("role." + session.roles[0]) }}</small>
         </div>
       </div>
       <Button

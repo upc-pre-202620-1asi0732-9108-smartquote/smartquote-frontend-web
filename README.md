@@ -14,15 +14,15 @@ cp .env.example .env.local
 npm run dev
 ```
 
-On PowerShell use `Copy-Item .env.example .env.local`. Set VITE_API_BASE_URL to the backend root URL and open http://127.0.0.1:5174. The access screen also accepts a backend address.
+On PowerShell use `Copy-Item .env.example .env.local`. Set VITE_API_BASE_URL to the backend root URL and open http://localhost:5173. The access screen also accepts a backend address.
 
 An .env file supplies environment configuration. Here it only supplies the public API address. Vite embeds VITE_* values into browser assets, so they must never contain signing keys or passwords. .env.local is excluded from Git; .env.example is the shared template.
 
-Configure backend CORS with `Cors__AllowedOrigins__0=http://127.0.0.1:5174`. Follow the backend instructions for database migrations, ConnectionStrings__DefaultConnection, Jwt__Issuer, Jwt__Audience and Jwt__SigningKey. A deployed frontend requires an accessible HTTPS backend and its exact frontend origin allowed by CORS.
+The local backend already allows `http://localhost:5173` through CORS. Follow the backend instructions for database migrations, ConnectionStrings__DefaultConnection, Jwt__Issuer, Jwt__Audience and Jwt__SigningKey. A deployed frontend requires an accessible HTTPS backend and its exact frontend origin allowed by CORS.
 
 ## Authentication and roles
 
-The current API validates JWTs but provides no password login or registration endpoint. The access screen accepts a token issued by the configured environment. The API enforces authorization; browser role checks adapt the interface.
+The application uses the Identity and Access Management (IAM) backend context. The access screen accepts an email address and password, never a JWT or the API address. The backend issues a short-lived access token after authentication and remains the authority for every permission.
 
 | JWT role | Available workflow |
 | --- | --- |
@@ -30,17 +30,15 @@ The current API validates JWTs but provides no password login or registration en
 | PurchaseAnalyst | Review requests, change states, upload and verify quotations, configure criteria and compare suppliers. |
 | PurchaseManager | Purchasing workflow, order approval, lookup and printing. |
 
-For a local development backend only, generate a token using its signing key outside the frontend bundle:
+For local development, configure `IdentityAccess__Bootstrap__Password` in the backend `.env` before starting Docker. The backend provisions the following accounts once, using that password:
 
-```powershell
-$env:SMARTQUOTE_JWT_KEY = Get-Content -Raw 'C:\secure\local-key.txt'
-npm run token:dev -- --role PurchaseManager
-npm run token:dev -- --role ProductionSpecialist
-```
+| Account | Role |
+| --- | --- |
+| `production@smartquote.local` | ProductionSpecialist |
+| `analyst@smartquote.local` | PurchaseAnalyst |
+| `manager@smartquote.local` | PurchaseManager |
 
-Default issuer: SmartQuote. Default audience: SmartQuote.Clients. Override them with SMARTQUOTE_JWT_ISSUER and SMARTQUOTE_JWT_AUDIENCE. SMARTQUOTE_USER_ID preserves a local user identifier. Tokens expire after four hours. This utility is not a production authentication service.
-
-Tokens stay in the tab's sessionStorage and are removed on logout. API address, language preference and simulation references use localStorage.
+The access token remains only in browser memory. The refresh session uses an `HttpOnly` cookie issued by the backend; signing out revokes it. API address, language preference and simulation references use localStorage.
 
 ## Purchasing workflow
 
@@ -77,24 +75,25 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The default browser suite checks language switching, persistence and the responsive access page. The purchasing browser test requires the local API and tokens created by the integration script:
+The default browser suite checks language switching, persistence and the responsive login page. The purchasing browser test requires local bootstrapped IAM accounts:
 
 ```powershell
-$env:SMARTQUOTE_API_URL = 'http://127.0.0.1:5088'
-$env:SMARTQUOTE_KEY_FILE = 'C:\secure\local-key.txt'
-npm run test:integration
+$env:SMARTQUOTE_API_URL = 'http://localhost:8080'
+$env:SMARTQUOTE_BOOTSTRAP_PASSWORD = 'your-local-bootstrap-password'
+$env:SMARTQUOTE_E2E_AUTH = '1' # Runs only the real IAM login check.
+$env:SMARTQUOTE_E2E_STUB = '1' # Set AI__Provider=Stub in the backend first.
 $env:SMARTQUOTE_E2E_REAL = '1'
 npm run test:e2e
 ```
 
-For an installed Microsoft Edge browser, optionally set PLAYWRIGHT_CHANNEL=msedge. Integration tests require AI__Provider=Stub, applied migrations and matching JWT settings. They are restricted to localhost and create persistent test data. Reports, temporary tokens and screenshots remain in ignored .local/. See [validation results](docs/integration-validation.md).
+For an installed Microsoft Edge browser, optionally set PLAYWRIGHT_CHANNEL=msedge. The integration test requires `AI__Provider=Stub` and applied migrations. It is restricted to localhost and creates persistent test data. Reports and screenshots remain in ignored `.local/`. See [validation results](docs/integration-validation.md).
 
 Build output is static dist/. `npm run preview` serves the production build locally.
 
 ## Backend limitations
 
 - Stub extraction validates upload, processing and review, not extraction accuracy for arbitrary PDFs. Configure and validate the backend provider for real supplier documents.
-- The current backend exposes no PDF download, server-side order export or password authentication. Orders use browser printing.
+- The current backend exposes no PDF download or server-side order export. Orders use browser printing.
 - A superseded scenario can still return isCurrent=true. The client checks the active scenario again before approval. The backend should enforce this as well to cover concurrent requests and other clients.
 - Hosting the frontend does not deploy its API or PostgreSQL.
 

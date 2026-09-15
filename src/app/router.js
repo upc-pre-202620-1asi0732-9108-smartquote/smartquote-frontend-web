@@ -10,6 +10,7 @@ export const router = createRouter({
     },
     {
       path: "/requests/new",
+      meta: { roles: ["ProductionSpecialist"] },
       component: () =>
         import("../supply-requests/presentation/pages/request-form.vue"),
     },
@@ -20,6 +21,7 @@ export const router = createRouter({
     },
     {
       path: "/notifications",
+      meta: { roles: ["ProductionSpecialist"] },
       component: () =>
         import("../supply-requests/presentation/pages/notification-list.vue"),
     },

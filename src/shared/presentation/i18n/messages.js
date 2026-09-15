@@ -3,15 +3,29 @@ export default {
     workspace: "Procurement workspace",
     language: "Language",
     connect: "Connect to SmartQuote",
-    accessTitle: "Welcome to your workspace",
+    accessTitle: "Sign in to SmartQuote",
     accessIntro:
-      "Connect with your organization's API address and access token.",
+      "Use your authorized SmartQuote account to access the purchasing workspace.",
     backendUrl: "Backend address",
     token: "Access token",
+    email: "Email address",
+    password: "Password",
+    signIn: "Sign in",
+    loginNote:
+      "Your session is secured by the server and ends when you sign out.",
+    restoringSession: "Restoring your session…",
+    savedProfiles: "Saved access profiles",
+    savedProfilesHelp:
+      "Choose a profile to continue. It remains only until this browser tab is closed.",
+    useProfile: "Enter",
+    removeProfile: "Remove saved profile",
+    addProfile: "Add another access profile",
+    addAndConnect: "Save profile and connect",
+    profileExpires: "expires",
     accessHelp:
-      "This backend validates JWT but has no password login endpoint. Use your organization's issuer or the development token script.",
+      "If you cannot access your account, contact the SmartQuote administrator.",
     tokenNote:
-      "The token stays in this browser tab. The API enforces permissions.",
+      "Tokens stay only in this browser tab. Sign out removes the active session; saved profiles disappear when the tab is closed.",
     accessStory: "From a purchase request to an informed decision.",
     accessSubtitle:
       "Review quotations, compare requirements and approve purchase orders.",
@@ -158,7 +172,7 @@ export default {
     termsReview:
       "Review extracted data and supplier conditions before approving. Uploads and approvals are saved in the connected backend.",
     termsData:
-      "Keep access tokens private and sign out on shared devices. Your organization controls data storage and access permissions.",
+      "Keep your credentials private and sign out on shared devices. Your organization controls data storage and access permissions.",
     termsDraft:
       "These operational conditions must be reviewed by the organization before production use.",
     statuses: {
@@ -206,10 +220,11 @@ export default {
       invalidUrl:
         "Use HTTPS, or HTTP on localhost, without credentials or parameters.",
       invalidSession: "Use a valid token that has not expired.",
+      invalidCredentials: "Email or password is invalid.",
       connection:
         "Cannot reach the API. Check its address and CORS. Refresh before repeating a timed out operation.",
       unauthorized:
-        "Your session expired or the token is invalid. Connect again.",
+        "Your session expired. Sign in again.",
       forbidden: "Your account does not have permission for this operation.",
       conflict:
         "These records changed. Refresh and review before saving again.",
@@ -244,15 +259,29 @@ export default {
     workspace: "Espacio de compras",
     language: "Idioma",
     connect: "Conectar con SmartQuote",
-    accessTitle: "Bienvenido a tu espacio de trabajo",
+    accessTitle: "Inicia sesión en SmartQuote",
     accessIntro:
-      "Conéctate con la dirección de la API y el token de tu organización.",
+      "Utiliza tu cuenta autorizada de SmartQuote para acceder al espacio de compras.",
     backendUrl: "Dirección del backend",
     token: "Token de acceso",
+    email: "Correo electrónico",
+    password: "Contraseña",
+    signIn: "Iniciar sesión",
+    loginNote:
+      "El servidor protege tu sesión y esta finaliza al cerrar sesión.",
+    restoringSession: "Restaurando tu sesión…",
+    savedProfiles: "Perfiles de acceso guardados",
+    savedProfilesHelp:
+      "Elige un perfil para continuar. Solo permanece hasta que se cierre esta pestaña del navegador.",
+    useProfile: "Ingresar",
+    removeProfile: "Eliminar perfil guardado",
+    addProfile: "Agregar otro perfil de acceso",
+    addAndConnect: "Guardar perfil e ingresar",
+    profileExpires: "vence",
     accessHelp:
-      "Este backend valida JWT pero no tiene login con contraseña. Usa el emisor de tu organización o el script de desarrollo.",
+      "Si no puedes acceder a tu cuenta, contacta al administrador de SmartQuote.",
     tokenNote:
-      "El token permanece en esta pestaña. La API verifica los permisos.",
+      "Los tokens solo permanecen en esta pestaña. Cerrar sesión elimina la sesión activa; los perfiles guardados desaparecen al cerrar la pestaña.",
     accessStory: "De una solicitud de compra a una decisión sustentada.",
     accessSubtitle:
       "Revisa cotizaciones, compara requisitos y aprueba órdenes.",
@@ -400,7 +429,7 @@ export default {
     termsReview:
       "Revisa los datos extraídos y las condiciones del proveedor antes de aprobar. Las cargas y aprobaciones se guardan en el backend conectado.",
     termsData:
-      "Mantén privados los tokens y cierra sesión en equipos compartidos. Tu organización controla el almacenamiento y los permisos.",
+      "Mantén privadas tus credenciales y cierra sesión en equipos compartidos. Tu organización controla el almacenamiento y los permisos.",
     termsDraft:
       "La organización debe revisar estas condiciones operativas antes del uso en producción.",
     statuses: {
@@ -448,10 +477,11 @@ export default {
       invalidUrl:
         "Usa HTTPS, o HTTP en localhost, sin credenciales ni parámetros.",
       invalidSession: "Utiliza un token válido que no haya vencido.",
+      invalidCredentials: "El correo o la contraseña son inválidos.",
       connection:
         "No se pudo contactar con la API. Revisa dirección y CORS. Actualiza antes de repetir una operación que tardó demasiado.",
       unauthorized:
-        "Tu sesión venció o el token no es válido. Vuelve a conectar.",
+        "Tu sesión venció. Inicia sesión nuevamente.",
       forbidden: "Tu cuenta no tiene permiso para esta operación.",
       conflict: "Estos datos cambiaron. Actualiza y revisa antes de guardar.",
       api: "La API no pudo completar esta operación.",
