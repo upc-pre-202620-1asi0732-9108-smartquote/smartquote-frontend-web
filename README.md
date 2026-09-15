@@ -1,12 +1,12 @@
-# SmartQuote · Frontend web
+# SmartQuote web
 
-Aplicación web en español para registrar necesidades de producción, revisar cotizaciones PDF, comparar proveedores y aprobar órdenes de compra. Adaptación a escritorio y móvil de los flujos de SmartQuote.
+Procurement workspace built with Vue 3, JavaScript, PrimeVue and the Material theme. English (en_US) is the default language; Latin American Spanish (es_419) is available throughout the interface. This repository delivers the responsive web application. The native mobile application is a separate team deliverable.
 
-Integración con [smartquote-web-services](https://github.com/upc-pre-202620-1asi0732-9108-smartquote/smartquote-web-services), rama `develop`. Validada contra el commit `e0b4d9287108cc9699f1b1ff325351c6f259429f` con PostgreSQL y la API .NET 10 reales. La interfaz consulta y guarda en `/api/v1`; no utiliza una base de datos ficticia en el navegador.
+Integrates with [smartquote-web-services](https://github.com/upc-pre-202620-1asi0732-9108-smartquote/smartquote-web-services), develop branch. Checked against commit e0b4d9287108cc9699f1b1ff325351c6f259429f with the real .NET 10 API and PostgreSQL 16.
 
-## Ejecutar
+## Run locally
 
-Requisitos: Node.js 22.18+ (recomendado 24), npm y el backend iniciado con PostgreSQL.
+Requirements: Node.js 22.18 or newer (24 recommended), npm and a running backend.
 
 ```sh
 npm ci
@@ -14,76 +14,90 @@ cp .env.example .env.local
 npm run dev
 ```
 
-En PowerShell, utiliza `Copy-Item .env.example .env.local`. Edita `VITE_API_BASE_URL` con la URL raíz del backend y abre **http://127.0.0.1:5174**. También puedes cambiar la URL desde la pantalla de acceso.
+On PowerShell use `Copy-Item .env.example .env.local`. Set VITE_API_BASE_URL to the backend root URL and open http://127.0.0.1:5174. The access screen also accepts a backend address.
 
-Configura CORS en el backend para el origen exacto del frontend; por ejemplo, `Cors__AllowedOrigins__0=http://127.0.0.1:5174`. Sigue las instrucciones del repositorio del backend para configurar `ConnectionStrings__DefaultConnection`, ejecutar las migraciones y definir `Jwt__Issuer`, `Jwt__Audience` y `Jwt__SigningKey`. En producción, ambos servicios deben usar HTTPS y CORS debe incluir el dominio publicado.
+An .env file supplies environment configuration. Here it only supplies the public API address. Vite embeds VITE_* values into browser assets, so they must never contain signing keys or passwords. .env.local is excluded from Git; .env.example is the shared template.
 
-## Acceso y roles
+Configure backend CORS with `Cors__AllowedOrigins__0=http://127.0.0.1:5174`. Follow the backend instructions for database migrations, ConnectionStrings__DefaultConnection, Jwt__Issuer, Jwt__Audience and Jwt__SigningKey. A deployed frontend requires an accessible HTTPS backend and its exact frontend origin allowed by CORS.
 
-El backend actual valida JWT, pero no publica endpoints de inicio de sesión o registro. Por eso el acceso requiere un token emitido por tu entorno. La API comprueba la autenticación y los permisos; los roles del navegador solo adaptan la navegación.
+## Authentication and roles
 
-| Rol JWT                | Flujo disponible                                                                                                      |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `ProductionSpecialist` | Crear solicitudes con ítems y requisitos, adjuntar documentos, consultar estados y notificaciones.                    |
-| `PurchaseAnalyst`      | Revisar solicitudes, cambiar estados, cargar y verificar cotizaciones, configurar criterios y ejecutar comparaciones. |
-| `PurchaseManager`      | Flujo de compras y aprobación, consulta e impresión de órdenes.                                                       |
+The current API validates JWTs but provides no password login or registration endpoint. The access screen accepts a token issued by the configured environment. The API enforces authorization; browser role checks adapt the interface.
 
-Para un backend **local de desarrollo**, el script de Node puede emitir tokens con la misma clave que el backend. Esta clave se mantiene fuera del frontend:
+| JWT role | Available workflow |
+| --- | --- |
+| ProductionSpecialist | Create requests, attach documents, track states and read notifications. |
+| PurchaseAnalyst | Review requests, change states, upload and verify quotations, configure criteria and compare suppliers. |
+| PurchaseManager | Purchasing workflow, order approval, lookup and printing. |
+
+For a local development backend only, generate a token using its signing key outside the frontend bundle:
 
 ```powershell
-$env:SMARTQUOTE_JWT_KEY = Get-Content -Raw 'C:\ruta-segura\clave-local.txt'
+$env:SMARTQUOTE_JWT_KEY = Get-Content -Raw 'C:\secure\local-key.txt'
 npm run token:dev -- --role PurchaseManager
 npm run token:dev -- --role ProductionSpecialist
 ```
 
-El emisor predeterminado es `SmartQuote` y la audiencia `SmartQuote.Clients`. Puedes ajustarlos con `SMARTQUOTE_JWT_ISSUER` y `SMARTQUOTE_JWT_AUDIENCE`. `SMARTQUOTE_USER_ID` permite reutilizar el identificador de una cuenta local. Los tokens duran cuatro horas. Nunca uses este script como autenticación de producción ni publiques claves en variables `VITE_*`.
+Default issuer: SmartQuote. Default audience: SmartQuote.Clients. Override them with SMARTQUOTE_JWT_ISSUER and SMARTQUOTE_JWT_AUDIENCE. SMARTQUOTE_USER_ID preserves a local user identifier. Tokens expire after four hours. This utility is not a production authentication service.
 
-El token de acceso se conserva en `sessionStorage` de la pestaña y se elimina al cerrar sesión. La URL de la API y las referencias de simulación se guardan en `localStorage`.
+Tokens stay in the tab's sessionStorage and are removed on logout. API address, language preference and simulation references use localStorage.
 
-## Flujo de compra
+## Purchasing workflow
 
-1. Producción registra ítems, cantidades, fecha y al menos un requisito obligatorio por ítem.
-2. Compras mueve la solicitud a revisión y después a recopilación de cotizaciones.
-3. Carga PDF por proveedor, solicita el procesamiento, revisa evidencias y corrige campos. Asigna las líneas a los ítems de la solicitud y verifica cada cotización.
-4. En evaluación, configura requisitos técnicos obligatorios y ponderaciones que sumen 100 %. Ejecuta la simulación calculada por el backend.
-5. El responsable revisa la alternativa elegible y confirma la generación de la orden. Puede imprimirla y marcar la solicitud como ordenada.
+1. Production creates a request with items, quantities, delivery date and mandatory technical requirements.
+2. Purchasing reviews the request and moves it to quotation collection.
+3. Upload supplier PDFs, process them through the API, review evidence, correct extracted fields, map lines to requested items and verify quotations.
+4. Move to evaluation, save criteria with weights totaling 100% and compare at least two eligible, verified quotations in the same currency.
+5. A manager reviews an eligible quotation and explicitly approves the purchase order. Print it and finish the request as Ordered.
 
-Las actualizaciones envían `expectedVersion`. Un conflicto de concurrencia muestra un aviso para actualizar antes de guardar de nuevo. Una comparación anterior queda deshabilitada si cambió la versión activa de criterios.
+Versioned updates send expectedVersion. Conflicts require refreshing before another save. Approval rechecks the active evaluation scenario to reject superseded results.
 
-## Comprobaciones
+## Domain-driven structure
+
+```text
+src/
+  app/                    Composition root, routing and web shell
+  identity/               Session validation and persistence
+  supply-requests/        Requests, attachments, states and notifications
+  quotation-intake/       PDF intake, extraction review and verification
+  evaluation-simulation/  Criteria, scenario versions and comparisons
+  purchase-ordering/      Approval and purchase orders
+  shared/                 Domain errors, HTTP transport and shared UI
+```
+
+Business contexts separate domain, application, infrastructure and presentation. Domain entities enforce client-side invariants; application services coordinate use cases through injected repositories. HTTP adapters implement repository contracts. Vue components call application services. The backend remains authoritative for rules, persistence and permissions. See [architecture](docs/architecture.md) and [guide alignment](docs/guide-compliance.md).
+
+## Checks
 
 ```sh
-npm run typecheck
 npm run lint
 npm test
 npm run build
+npx playwright install chromium
+npm run test:e2e
 ```
 
-`lint` revisa el código de la aplicación, el cliente API y los scripts; el catálogo generado de componentes shadcn se conserva sin modificaciones. `npm start` sirve la compilación con Wrangler.
-
-Prueba de integración sobre una base de desarrollo local (crea datos persistentes):
+The default browser suite checks language switching, persistence and the responsive access page. The purchasing browser test requires the local API and tokens created by the integration script:
 
 ```powershell
 $env:SMARTQUOTE_API_URL = 'http://127.0.0.1:5088'
-$env:SMARTQUOTE_KEY_FILE = 'C:\ruta-segura\clave-local.txt'
+$env:SMARTQUOTE_KEY_FILE = 'C:\secure\local-key.txt'
 npm run test:integration
+$env:SMARTQUOTE_E2E_REAL = '1'
+npm run test:e2e
 ```
 
-Requiere `AI__Provider=Stub` en el backend, migraciones aplicadas y los valores JWT indicados arriba. Se restringe a localhost. Genera cotizaciones PDF de prueba y registra resultados y tokens temporales en `.local/`, excluido de Git. Consulta [la validación documentada](docs/integration-validation.md).
+For an installed Microsoft Edge browser, optionally set PLAYWRIGHT_CHANNEL=msedge. Integration tests require AI__Provider=Stub, applied migrations and matching JWT settings. They are restricted to localhost and create persistent test data. Reports, temporary tokens and screenshots remain in ignored .local/. See [validation results](docs/integration-validation.md).
 
-## Límites del backend actual
+Build output is static dist/. `npm run preview` serves the production build locally.
 
-- Las pruebas de extracción utilizaron el proveedor `Stub` incluido en el repositorio. Validan carga, procesamiento, evidencia y revisión, pero no la precisión de extracción con IA. Para PDF reales, configura el proveedor de extracción del backend y valida sus resultados.
-- El backend no expone descarga de PDF, exportación de órdenes ni autenticación de usuario/contraseña. La interfaz muestra las evidencias devueltas y utiliza la impresión del navegador para las órdenes.
-- El backend puede devolver `isCurrent=true` para una simulación de una versión de criterios anterior. El cliente comprueba además el escenario activo antes de habilitar la aprobación. Conviene aplicar también esta validación en el backend para proteger otros clientes y cambios concurrentes.
-- Publicar este frontend no publica PostgreSQL ni la API. Para utilizarlo desde otros equipos se necesita una URL HTTPS accesible del backend, CORS y un emisor de tokens.
+## Backend limitations
 
-## Estructura
+- Stub extraction validates upload, processing and review, not extraction accuracy for arbitrary PDFs. Configure and validate the backend provider for real supplier documents.
+- The current backend exposes no PDF download, server-side order export or password authentication. Orders use browser printing.
+- A superseded scenario can still return isCurrent=true. The client checks the active scenario again before approval. The backend should enforce this as well to cover concurrent requests and other clients.
+- Hosting the frontend does not deploy its API or PostgreSQL.
 
-- `components/smartquote/`: acceso, solicitudes, cotizaciones, comparación y órdenes.
-- `lib/smartquote/`: tipos, contratos HTTP y presentación del dominio.
-- `app/`: entrada, metadatos y estilos responsivos.
-- `tests/` y `scripts/`: comprobaciones del cliente e integración real.
-- `components/ui/`: catálogo shadcn sobre Base UI.
+## Collaboration
 
-Stack: React 19, TypeScript, Vinext/Vite, Tailwind CSS 4 y shadcn. No se incorporan claves del backend al paquete de navegador.
+Use develop for integration, feature branches such as codex/feature/vue-ddd for focused changes, release branches for stabilization and hotfix branches for urgent production fixes. Merge verified releases into main and back into develop. Use conventional commits and semantic versions. Group changes by completed behavior and review the diff and checks before committing or pushing.
