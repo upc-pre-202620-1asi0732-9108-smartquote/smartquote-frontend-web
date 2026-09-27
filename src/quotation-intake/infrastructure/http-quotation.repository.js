@@ -38,6 +38,12 @@ export class HttpQuotationRepository extends QuotationRepository {
       },
     );
   }
+  addSpecification(quote, lineId, data) {
+    return this.http.request(
+      `/quotations/${quote.quotationId}/lines/${lineId}/specifications`,
+      { method: "POST", body: JSON.stringify({ ...data, expectedVersion: quote.version }) },
+    );
+  }
   confirm(quote, mappings) {
     return this.http.request(`/quotations/${quote.quotationId}/confirm`, {
       method: "POST",

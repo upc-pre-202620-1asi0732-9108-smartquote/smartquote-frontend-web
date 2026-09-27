@@ -2,10 +2,8 @@
 import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import Button from "primevue/button";
-import InputNumber from "primevue/inputnumber";
-import InputText from "primevue/inputtext";
+import Slider from "primevue/slider";
 import Message from "primevue/message";
-import Field from "../../shared/presentation/components/form-field.vue";
 import { useWorkspace } from "../../shared/presentation/use-workspace.js";
 import { useFormat } from "../../shared/presentation/format.js";
 import { defaultCriteria } from "../domain/evaluation-scenario.entity.js";
@@ -28,11 +26,18 @@ const criteria = ref(
         props.scenario?.criteria ?? defaultCriteria(props.request),
       ),
     ),
-  ),
-  runId = ref("");
+  );
 const weighted = computed(() =>
   criteria.value.filter((c) => c.mode === "Weighted"),
 );
+const price = computed(() => weighted.value.find((c) => c.category === "Price"));
+const delivery = computed(() => weighted.value.find((c) => c.category === "DeliveryTime"));
+function setPriceWeight(value) {
+  if (price.value && delivery.value) {
+    price.value.weight = value;
+    delivery.value.weight = 100 - value;
+  }
+}
 const weightSum = computed(() =>
   weighted.value.reduce((sum, c) => sum + (c.weight || 0), 0),
 );
@@ -47,48 +52,34 @@ const canRun = computed(
     props.request.status === "Evaluation" &&
     verified.value.length >= 2 &&
     new Set(verified.value.map((q) => q.currency)).size === 1 &&
-    props.scenario &&
-    !dirty.value,
+    weightSum.value === 100,
 );
 const winner = computed(() =>
   props.quotes.find(
     (q) => q.quotationId === props.simulation?.recommendation?.quotationId,
   ),
 );
-async function save() {
-  await props.execute(async () => {
-    emit(
-      "scenario",
-      await services.value.evaluations.save(
-        props.request.requestId,
-        criteria.value,
-        props.scenario,
-      ),
-    );
-  }, t("saved"));
-}
 async function run() {
   await props.execute(async () => {
+    let current = props.scenario;
+    if (!current || dirty.value) {
+      current = await services.value.evaluations.save(props.request.requestId, criteria.value, current);
+      emit("scenario", current);
+    }
     await props.acceptRun(
-      await services.value.evaluations.simulate(props.scenario.scenarioId),
+      await services.value.evaluations.simulate(current.scenarioId),
     );
   });
-}
-async function restore() {
-  await props.execute(async () => {
-    await props.acceptRun(
-      await services.value.evaluations.simulation(runId.value.trim()),
-    );
-  });
-}
-async function copy() {
-  await props.execute(
-    () => navigator.clipboard.writeText(window.location.href),
-    t("copied"),
-  );
 }
 const name = (id) =>
   props.quotes.find((q) => q.quotationId === id)?.supplierBusinessName || id;
+function friendlyExplanation(raw) {
+  if (!raw) return t("criterionNoEvidence");
+  const legacy = /^(.*?): '([^']*)' (satisfies|does not satisfy) (Equals|Contains|GreaterThanOrEqual|LessThanOrEqual) '([^']*)'\.$/.exec(raw);
+  if (!legacy) return raw;
+  const [, criterion, observed, outcome, operator, expected] = legacy;
+  return `${criterion}: ${observed === "N/A" ? t("criterionNoEvidence") : `${t("criterionObserved")} ${observed}`}; ${t("criterionNeeds")} ${t("operators." + operator)} ${expected}. ${t(outcome === "satisfies" ? "criterionPass" : "criterionFail")}`;
+}
 </script>
 <template>
   <div class="section-heading">
@@ -101,21 +92,21 @@ const name = (id) =>
     >
   </div>
   <section class="panel">
-    <div class="weights-grid">
-      <Field
-        v-for="criterion in weighted"
-        :key="criterion.targetField"
-        :label="t('category.' + criterion.category)"
-        v-slot="{ id }"
-        ><InputNumber
-          :input-id="id"
-          v-model="criterion.weight"
-          suffix=" %"
+    <div v-if="price && delivery" class="weights-grid">
+      <div>
+        <label for="price-weight">{{ t('category.Price') }}: {{ price.weight }}%</label>
+        <Slider
+          id="price-weight"
+          :model-value="price.weight"
           :min="0"
           :max="100"
-          :max-fraction-digits="2"
+          :step="5"
           :disabled="busy"
-      /></Field>
+          :aria-label="t('priceWeight')"
+          @update:model-value="setPriceWeight"
+        />
+        <span class="muted">{{ t('category.DeliveryTime') }}: {{ delivery.weight }}%</span>
+      </div>
       <div class="weight-total">
         <small>{{ t("weightTotal") }}</small
         ><strong :class="{ invalid: weightSum !== 100 }"
@@ -146,17 +137,6 @@ const name = (id) =>
     </details>
     <div class="actions">
       <Button
-        :label="t('saveCriteria')"
-        icon="pi pi-save"
-        outlined
-        :disabled="
-          busy ||
-          weightSum !== 100 ||
-          !request.acceptsQuotations ||
-          (scenario && !dirty)
-        "
-        @click="save"
-      /><Button
         :label="t('runComparison')"
         icon="pi pi-play"
         :disabled="busy || !canRun"
@@ -170,13 +150,7 @@ const name = (id) =>
       <span class="muted"
         >{{ format.date(simulation.executedAt, true) }} · {{ t("version") }}
         {{ simulation.criteriaVersion }}</span
-      ><Button
-        :label="t('copyLink')"
-        icon="pi pi-link"
-        text
-        :disabled="busy"
-        @click="copy"
-      />
+      >
     </div>
     <Message v-if="!simulation.isCurrent" severity="warn">{{
       t("staleComparison")
@@ -244,30 +218,18 @@ const name = (id) =>
           v-for="(reason, index) in evaluation.exclusionReasons"
           :key="'reason' + index"
         >
-          {{ reason.explanation }}
+          {{ friendlyExplanation(reason.explanation) }}
         </p>
         <div
           v-for="result in evaluation.criterionResults"
           :key="result.criterionId"
           class="criterion-result"
         >
-          <span>{{ result.explanation }}</span
+          <span>{{ friendlyExplanation(result.explanation) }}</span
           ><strong>{{ format.score(result.weightedContribution) }}</strong>
         </div>
       </details>
     </section></template
   >
   <p v-else class="empty-state">{{ t("emptyComparison") }}</p>
-  <details class="restore-comparison">
-    <summary>{{ t("restoreSimulation") }}</summary>
-    <form class="inline-row" @submit.prevent="restore">
-      <InputText
-        v-model="runId"
-        :aria-label="t('simulationId')"
-        :placeholder="t('simulationId')"
-        required
-        :disabled="busy"
-      /><Button type="submit" :label="t('open')" outlined :disabled="busy" />
-    </form>
-  </details>
 </template>

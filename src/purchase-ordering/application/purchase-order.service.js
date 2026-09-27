@@ -7,6 +7,9 @@ export class PurchaseOrderService {
   findBySimulation(id) {
     return this.repository.findBySimulation(id);
   }
+  findByRequest(id, signal) {
+    return this.repository.findByRequest(id, signal);
+  }
   async approve(requestId, runId, quoteId, conditions, destination) {
     const current = await this.evaluationService.currentSimulation(
       requestId,

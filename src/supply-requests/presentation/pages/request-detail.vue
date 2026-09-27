@@ -35,60 +35,51 @@ const id = route.params.id,
   quotes = ref([]),
   scenario = ref(null),
   simulation = ref(null),
+  simulations = ref([]),
   order = ref(null);
 const tab = ref("request"),
   dialog = ref(false),
   nextStatus = ref(""),
   reason = ref("");
-const runKey =
-  "smartquote.run:" +
-  session.value.baseUrl +
-  ":" +
-  session.value.userId +
-  ":" +
-  id;
 const abort = new AbortController();
 async function refresh() {
   const api = services.value;
-  const [r, h, q, s] = await Promise.all([
+  const [r, h, q, s, runs, existingOrder] = await Promise.all([
     api.requests.get(id, abort.signal),
     api.requests.history(id, abort.signal),
     session.value.purchasing ? api.quotations.list(id, abort.signal) : [],
     session.value.purchasing
       ? optional(api.evaluations.current(id, abort.signal))
       : null,
+    session.value.purchasing ? api.evaluations.listForRequest(id, abort.signal) : [],
+    session.value.manager ? optional(api.orders.findByRequest(id, abort.signal)) : null,
   ]);
   request.value = r;
   history.value = h.entries;
   quotes.value = q;
   scenario.value = s;
-  const runId =
-    new URLSearchParams(window.location.hash.split("?")[1] || "").get(
-      "simulation",
-    ) || localStorage.getItem(runKey);
-  if (runId && session.value.purchasing) {
-    simulation.value = await optional(
-      api.evaluations.currentSimulation(id, runId, abort.signal),
-    );
-    order.value = session.value.manager
-      ? await optional(api.orders.findBySimulation(runId))
-      : null;
-  }
+  simulations.value = runs;
+  simulation.value = runs.find((run) => run.simulationRunId === simulation.value?.simulationRunId)
+    ?? runs[0] ?? null;
+  order.value = existingOrder;
 }
 async function acceptRun(run) {
-  simulation.value = await services.value.evaluations.currentSimulation(
-    id,
-    run.simulationRunId,
-  );
-  localStorage.setItem(runKey, run.simulationRunId);
-  const url = new URL(window.location.href);
-  url.hash = "/requests/" + id + "?simulation=" + run.simulationRunId;
-  window.history.replaceState(window.history.state, "", url);
-  order.value = session.value.manager
-    ? await optional(
-        services.value.orders.findBySimulation(run.simulationRunId),
-      )
-    : null;
+  simulation.value = run;
+  await refresh();
+}
+async function advance() {
+  await execute(async () => {
+    let current = request.value;
+    if (current.status === "Submitted") {
+      await services.value.requests.changeStatus(current, "UnderReview", "Solicitud recibida para revisión de compras.");
+      current = await services.value.requests.get(id);
+    }
+    if (current.status === "UnderReview")
+      await services.value.requests.changeStatus(current, "QuotationCollection", "Se inicia la recepción de cotizaciones.");
+    else if (current.status === "QuotationCollection")
+      await services.value.requests.changeStatus(current, "Evaluation", "Hay al menos dos cotizaciones verificadas para comparar.");
+    await refresh();
+  }, t("saved"));
 }
 async function updateStatus() {
   await execute(async () => {
@@ -144,6 +135,11 @@ onUnmounted(() => abort.abort());
           outlined
           :loading="busy"
           @click="execute(refresh)"
+        /><Button
+          v-if="session.purchasing && ['Submitted', 'UnderReview', 'QuotationCollection'].includes(request.status)"
+          :label="request.status === 'QuotationCollection' ? t('startEvaluation') : t('startQuotations')"
+          :disabled="busy || (request.status === 'QuotationCollection' && quotes.filter((q) => q.verified).length < 2)"
+          @click="advance"
         /><Button
           v-if="session.purchasing && request.nextStatuses.length"
           :label="t('changeStatus')"
@@ -292,6 +288,18 @@ onUnmounted(() => abort.abort());
         <TabPanel value="history"
           ><section class="panel">
             <h2>{{ t("history") }}</h2>
+            <div v-if="session.purchasing && simulations.length" class="stack">
+              <h3>{{ t("comparisonHistory") }}</h3>
+              <Button
+                v-for="run in simulations"
+                :key="run.simulationRunId"
+                :label="`${format.date(run.executedAt, true)} · ${run.isCurrent ? t('currentComparison') : t('historicalComparison')}`"
+                text
+                :disabled="busy"
+                @click="simulation = run; tab = 'comparison'"
+              />
+            </div>
+            <p v-if="order">{{ t('purchaseOrder') }}: {{ order.orderNumber }}</p>
             <p v-if="!history.length" class="empty-state">
               {{ t("historyEmpty") }}
             </p>

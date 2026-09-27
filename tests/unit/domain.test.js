@@ -96,7 +96,9 @@ test("quotation mappings cover every line; editable fields match API contract", 
     (e) => e.code === "mappingRequired",
   );
   q.assertMappings({ a: "item", b: "item" });
-  assert.equal(Quotation.editable("supplier.businessName"), false);
+  assert.equal(Quotation.editable("supplier.businessName"), true);
+  assert.equal(Quotation.editable("supplier.taxIdentifier"), true);
+  assert.equal(Quotation.editable("lines[0].specifications[0].value"), true);
   assert.equal(Quotation.editable("lines[0].unitPrice"), true);
 });
 test("all mandatory requirements survive defaults and weights must sum to 100", () => {

@@ -14,6 +14,9 @@ export class QuotationRepository {
   correct() {
     throw new Error("Repository operation not implemented: correct");
   }
+  addSpecification() {
+    throw new Error("Repository operation not implemented: addSpecification");
+  }
   confirm() {
     throw new Error("Repository operation not implemented: confirm");
   }

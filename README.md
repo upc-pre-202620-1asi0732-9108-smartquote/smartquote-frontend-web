@@ -2,7 +2,7 @@
 
 Procurement workspace built with Vue 3, JavaScript, PrimeVue and the Material theme. English (en_US) is the default language; Latin American Spanish (es_419) is available throughout the interface. This repository delivers the responsive web application. The native mobile application is a separate team deliverable.
 
-Integrates with [smartquote-web-services](https://github.com/upc-pre-202620-1asi0732-9108-smartquote/smartquote-web-services), develop branch. Checked against commit e0b4d9287108cc9699f1b1ff325351c6f259429f with the real .NET 10 API and PostgreSQL 16.
+Integrates with `smartquote-web-services`. Deploy the frontend and backend changes together: the request view now uses the request-scoped simulation and purchase-order endpoints.
 
 ## Run locally
 
@@ -30,23 +30,17 @@ The application uses the Identity and Access Management (IAM) backend context. T
 | PurchaseAnalyst | Review requests, change states, upload and verify quotations, configure criteria and compare suppliers. |
 | PurchaseManager | Purchasing workflow, order approval, lookup and printing. |
 
-For local development, configure `IdentityAccess__Bootstrap__Password` in the backend `.env` before starting Docker. The backend provisions the following accounts once, using that password:
+On a new database, the first registered account becomes the purchase manager. Subsequent accounts require manager approval. Existing local databases may already contain test accounts; their credentials are not embedded in this frontend.
 
-| Account | Role |
-| --- | --- |
-| `production@smartquote.local` | ProductionSpecialist |
-| `analyst@smartquote.local` | PurchaseAnalyst |
-| `manager@smartquote.local` | PurchaseManager |
-
-The access token remains only in browser memory. The refresh session uses an `HttpOnly` cookie issued by the backend; signing out revokes it. API address, language preference and simulation references use localStorage.
+The access token remains only in browser memory. The refresh session uses an `HttpOnly` cookie issued by the backend; signing out revokes it. Simulation and order history are read from the backend, not localStorage.
 
 ## Purchasing workflow
 
 1. Production creates a request with items, quantities, delivery date and mandatory technical requirements.
-2. Purchasing reviews the request and moves it to quotation collection.
-3. Upload supplier PDFs, process them through the API, review evidence, correct extracted fields, map lines to requested items and verify quotations.
-4. Move to evaluation, save criteria with weights totaling 100% and compare at least two eligible, verified quotations in the same currency.
-5. A manager reviews an eligible quotation and explicitly approves the purchase order. Print it and finish the request as Ordered.
+2. Purchasing starts collection in one action; the API records both underlying status transitions.
+3. Upload up to 20 supplier PDFs without pretyping supplier details. At most two files process concurrently. Review source evidence, confirm or correct supplier and technical fields, check suggested item mappings and verify. Two verified quotations move the request to evaluation.
+4. Adjust the price/delivery slider and run a comparison; the scenario version is saved automatically. Prior runs remain available from the request history.
+5. A manager reviews an eligible quotation and explicitly approves the order. The backend issues at most one order per request and records the final status. Print the order if needed.
 
 Versioned updates send expectedVersion. Conflicts require refreshing before another save. Approval rechecks the active evaluation scenario to reject superseded results.
 

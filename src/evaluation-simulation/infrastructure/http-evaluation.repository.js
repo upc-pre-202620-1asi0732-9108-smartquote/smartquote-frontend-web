@@ -42,4 +42,8 @@ export class HttpEvaluationRepository extends EvaluationRepository {
       }),
     );
   }
+  async listForRequest(requestId, signal) {
+    return (await this.http.request(`/purchase-requests/${requestId}/simulations`, { signal }))
+      .map((dto) => new Simulation(dto));
+  }
 }

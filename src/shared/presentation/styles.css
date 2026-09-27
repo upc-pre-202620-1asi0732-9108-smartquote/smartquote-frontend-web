@@ -770,9 +770,12 @@ blockquote {
 }
 .weights-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: minmax(0, 2fr) minmax(10rem, 1fr);
   gap: 24px;
   align-items: center;
+}
+.weights-grid .p-slider {
+  margin: 18px 4px 14px;
 }
 .weight-total {
   display: flex;

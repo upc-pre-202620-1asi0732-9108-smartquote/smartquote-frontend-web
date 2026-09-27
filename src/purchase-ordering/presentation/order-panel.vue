@@ -61,25 +61,6 @@ async function approve() {
     );
     emit("order", order);
     confirmed.value = false;
-  }, t("saved"));
-}
-async function markOrdered() {
-  await props.execute(async () => {
-    let current = await services.value.requests.get(props.request.requestId);
-    if (current.status === "Evaluation") {
-      await services.value.requests.changeStatus(
-        current,
-        "Approved",
-        props.order.orderNumber,
-      );
-      current = await services.value.requests.get(current.requestId);
-    }
-    if (current.status === "Approved")
-      await services.value.requests.changeStatus(
-        current,
-        "Ordered",
-        props.order.orderNumber,
-      );
     await props.refresh();
   }, t("saved"));
 }
@@ -151,14 +132,7 @@ function print() {
         ><span class="identifier">{{ order.purchaseOrderId }}</span>
       </footer>
     </article>
-    <Button
-      v-if="['Evaluation', 'Approved'].includes(request.status)"
-      class="no-print"
-      :label="t('markOrdered')"
-      icon="pi pi-check"
-      :disabled="busy"
-      @click="markOrdered"
-  /></template>
+  </template>
   <form
     v-else-if="simulation?.isCurrent && eligible.length"
     class="panel stack"
