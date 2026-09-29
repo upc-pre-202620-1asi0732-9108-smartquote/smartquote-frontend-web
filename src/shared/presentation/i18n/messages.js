@@ -149,7 +149,14 @@ export default {
     saveCriteria: "Save criteria version",
     runComparison: "Run comparison",
     comparisonHelp:
-      "Requires the evaluation stage and at least two eligible, verified quotations in the same currency.",
+      "Requires the evaluation stage and at least two eligible, verified quotations in PEN or USD. USD amounts use the current official SUNAT sale rate.",
+    exchangeRateApplied: "Official exchange rate applied",
+    saleRate: "sale rate",
+    publishedOn: "published",
+    retrievedAt: "retrieved",
+    originalTotal: "Original total",
+    comparisonTotal: "Comparable total in PEN",
+    convertedWithOfficialRate: "Converted with the recorded official rate",
     emptyComparison: "No comparison has been run yet.",
     staleComparison:
       "This comparison is outdated. Run a new one before approval.",
@@ -250,6 +257,8 @@ export default {
       forbidden: "Your account does not have permission for this operation.",
       conflict:
         "These records changed. Refresh and review before saving again.",
+      externalService:
+        "The official exchange-rate source is unavailable, so the comparison was not executed.",
       api: "The API could not complete this operation.",
       transition: "This status transition is not allowed.",
       reasonRequired: "Enter a reason for this change.",
@@ -428,7 +437,14 @@ export default {
     saveCriteria: "Guardar versión de criterios",
     runComparison: "Ejecutar comparación",
     comparisonHelp:
-      "Requiere evaluación y al menos dos cotizaciones elegibles y verificadas en la misma moneda.",
+      "Requiere evaluación y al menos dos cotizaciones elegibles y verificadas en PEN o USD. Los importes en USD usan el tipo de cambio de venta vigente de SUNAT.",
+    exchangeRateApplied: "Tipo de cambio oficial aplicado",
+    saleRate: "tipo de cambio de venta",
+    publishedOn: "publicado",
+    retrievedAt: "consultado",
+    originalTotal: "Total original",
+    comparisonTotal: "Total comparable en PEN",
+    convertedWithOfficialRate: "Convertido con la tasa oficial registrada",
     emptyComparison: "Todavía no hay una comparación.",
     staleComparison:
       "Esta comparación está desactualizada. Ejecuta una nueva antes de aprobar.",
@@ -528,6 +544,8 @@ export default {
         "Tu sesión venció. Inicia sesión nuevamente.",
       forbidden: "Tu cuenta no tiene permiso para esta operación.",
       conflict: "Estos datos cambiaron. Actualiza y revisa antes de guardar.",
+      externalService:
+        "La fuente oficial de tipo de cambio no está disponible, por lo que no se ejecutó la comparación.",
       api: "La API no pudo completar esta operación.",
       transition: "Este cambio de estado no está permitido.",
       reasonRequired: "Escribe un motivo para este cambio.",

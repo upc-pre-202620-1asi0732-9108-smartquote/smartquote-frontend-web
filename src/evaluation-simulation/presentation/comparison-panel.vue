@@ -51,12 +51,17 @@ const canRun = computed(
   () =>
     props.request.status === "Evaluation" &&
     verified.value.length >= 2 &&
-    new Set(verified.value.map((q) => q.currency)).size === 1 &&
+    verified.value.every((q) => ["PEN", "USD"].includes(q.currency?.toUpperCase())) &&
     weightSum.value === 100,
 );
 const winner = computed(() =>
   props.quotes.find(
     (q) => q.quotationId === props.simulation?.recommendation?.quotationId,
+  ),
+);
+const winnerEvaluation = computed(() =>
+  props.simulation?.evaluations.find(
+    (evaluation) => evaluation.quotationId === winner.value?.quotationId,
   ),
 );
 async function run() {
@@ -155,13 +160,33 @@ function friendlyExplanation(raw) {
     <Message v-if="!simulation.isCurrent" severity="warn">{{
       t("staleComparison")
     }}</Message>
+    <section v-if="simulation.exchangeRate" class="exchange-rate-card" aria-live="polite">
+      <i class="pi pi-arrow-right-arrow-left" />
+      <div>
+        <strong>{{ t("exchangeRateApplied") }}</strong>
+        <p>
+          1 {{ simulation.exchangeRate.sourceCurrency }} =
+          {{ simulation.exchangeRate.rate }} {{ simulation.exchangeRate.targetCurrency }}
+          · {{ t("saleRate") }}
+        </p>
+        <small>
+          {{ simulation.exchangeRate.source }} ·
+          {{ t("publishedOn") }} {{ format.date(simulation.exchangeRate.publishedOn) }} ·
+          {{ t("retrievedAt") }} {{ format.date(simulation.exchangeRate.retrievedAt, true) }}
+        </small>
+      </div>
+    </section>
     <div v-if="winner" class="recommendation">
       <span class="recommendation-icon"><i class="pi pi-trophy" /></span>
       <div>
         <span class="eyebrow">{{ t("recommended") }}</span>
         <h3>{{ winner.supplierBusinessName }}</h3>
         <p>
-          {{ format.money(winner.total, winner.currency) }} · {{ t("score") }}
+          {{ format.money(winnerEvaluation?.comparisonTotal ?? winner.total, winnerEvaluation?.comparisonCurrency ?? winner.currency) }}
+          <template v-if="winnerEvaluation?.conversionApplied">
+            ({{ format.money(winnerEvaluation.originalTotal, winnerEvaluation.originalCurrency) }})
+          </template>
+          · {{ t("score") }}
           {{ format.score(simulation.recommendation.score) }} / 100
         </p>
       </div>
@@ -180,6 +205,8 @@ function friendlyExplanation(raw) {
           <thead>
             <tr>
               <th>{{ t("supplier") }}</th>
+              <th>{{ t("originalTotal") }}</th>
+              <th>{{ t("comparisonTotal") }}</th>
               <th>{{ t("status") }}</th>
               <th>{{ t("score") }}</th>
               <th>{{ t("rank") }}</th>
@@ -191,6 +218,11 @@ function friendlyExplanation(raw) {
               :key="evaluation.quotationId"
             >
               <td>{{ name(evaluation.quotationId) }}</td>
+              <td>{{ format.money(evaluation.originalTotal, evaluation.originalCurrency) }}</td>
+              <td>
+                <strong>{{ format.money(evaluation.comparisonTotal, evaluation.comparisonCurrency) }}</strong>
+                <small v-if="evaluation.conversionApplied" class="conversion-note">{{ t("convertedWithOfficialRate") }}</small>
+              </td>
               <td :class="evaluation.isEligible ? 'eligible' : 'invalid'">
                 {{ evaluation.isEligible ? t("eligible") : t("excluded") }}
               </td>

@@ -22,7 +22,8 @@ export function useFeedback() {
     } catch (e) {
       if (e.name !== "AbortError") {
         error.value = t("error." + (e.code || "unexpected"));
-        if (e.code === "api" && e.detail) error.value += " " + e.detail;
+        if (["api", "externalService"].includes(e.code) && e.detail)
+          error.value += " " + e.detail;
         if (e.status === 401) workspace.disconnect();
       }
     } finally {

@@ -805,6 +805,34 @@ blockquote {
   margin: 24px 0;
   font-size: 0.85rem;
 }
+
+.exchange-rate-card {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin: 1rem 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--sq-border);
+  border-left: 4px solid var(--sq-primary);
+  border-radius: 0.75rem;
+  background: var(--sq-surface);
+}
+
+.exchange-rate-card i {
+  color: var(--sq-primary);
+  font-size: 1.25rem;
+  margin-top: 0.15rem;
+}
+
+.exchange-rate-card p {
+  margin: 0.25rem 0;
+}
+
+.exchange-rate-card small,
+.conversion-note {
+  display: block;
+  color: var(--sq-muted);
+}
 .recommendation {
   background: var(--sq-success-surface);
   border: 1px solid #b9dfc2;

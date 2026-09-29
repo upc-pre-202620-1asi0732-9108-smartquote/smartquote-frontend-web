@@ -33,7 +33,7 @@ export class HttpClient {
     if (!response.ok) {
       const problem = await response.json().catch(() => ({}));
       const code =
-        { 401: "unauthorized", 403: "forbidden", 409: "conflict" }[
+        { 401: "unauthorized", 403: "forbidden", 409: "conflict", 503: "externalService" }[
           response.status
         ] || "api";
       const detail =
