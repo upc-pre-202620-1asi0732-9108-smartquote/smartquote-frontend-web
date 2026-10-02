@@ -103,10 +103,33 @@ GitHub Actions runs lint, unit tests, the production build and the default Playw
 | Push to develop | Validation, then deployment to the named Azure Static Web Apps preview environment `staging`. |
 | Push to main | Validation, then deployment to the existing production site. |
 
-Deployment uploads the exact `dist/` artifact from validation without rebuilding it. A failed check blocks publication. The former Azure-generated workflow is replaced to avoid competing deployments. Production now updates from `main`, rather than `develop`.
+Deployment uploads the exact `dist/` artifact from validation without rebuilding it. A failed check blocks publication. `ci.yml` provides shared validation; `cd-staging.yml` and `cd-production.yml` call it before deploying. Deployment uses the Azure deployment token, without GitHub OIDC or a required Azure-generated filename. The deployment action is pinned to an official revision that declares the required deployment inputs; the older `v1` tag does not declare them. Production updates from `main`, rather than `develop`.
 
 Keep the existing repository secret `AZURE_STATIC_WEB_APPS_API_TOKEN_AGREEABLE_BUSH_0F1889D10`. Optionally set repository variables `PRODUCTION_API_BASE_URL` and `STAGING_API_BASE_URL` under GitHub Settings > Secrets and variables > Actions > Variables. Both default to the current Azure backend; a frontend preview does not create or deploy a separate backend. Public API URLs are embedded at build time, so Azure runtime environment settings alone do not change them.
 
-After the first develop deployment, open Azure > smartquote-frontend > Environments and copy the `staging` URL. Add its exact origin (scheme and hostname, without a trailing slash) to the backend's allowed CORS origins alongside the existing production origin. The workflows preserve the existing deployment secret and GitHub identity token authentication. No additional Static Web App is required.
+The existing GitHub secret must contain the current deployment token for this Static Web App. If the portal does not expose the deployment authorization policy, use Azure Cloud Shell (Bash) to inspect it:
+
+```bash
+frontend_resource_id=$(az staticwebapp show --name smartquote-frontend --resource-group smartquote-rg --query id --output tsv)
+az rest --method get --url "https://management.azure.com${frontend_resource_id}?api-version=2024-04-01" --query properties.deploymentAuthPolicy --output tsv
+```
+
+If the result is `GitHub`, Azure requires a GitHub repository token as well to change the policy. An Azure deployment token is not a repository token. Create a short-lived GitHub personal access token from an account with access to this repository (Settings > Developer settings > Personal access tokens > Tokens (classic)); select `repo` and `workflow` for repository/workflow access. Organization restrictions or SSO may require additional authorization. Do not commit or share this temporary token, and do not replace the Azure deployment secret with it. In Cloud Shell Bash, read it without displaying it or putting its literal value in command history:
+
+```bash
+read -s -p 'Temporary GitHub repository token: ' frontend_repository_token
+printf '\n'
+frontend_current_config=$(az rest --method get --url "https://management.azure.com${frontend_resource_id}?api-version=2024-04-01" --output json)
+frontend_policy_body=$(jq -c --arg token "$frontend_repository_token" '{properties:{deploymentAuthPolicy:"DeploymentToken",repositoryToken:$token,repositoryUrl:.properties.repositoryUrl,branch:.properties.branch,buildProperties:({appLocation:"/",apiLocation:"",outputLocation:"dist"}+(.properties.buildProperties // {})+{skipGithubActionWorkflowGeneration:true})}}' <<< "$frontend_current_config")
+az rest --method patch --url "https://management.azure.com${frontend_resource_id}?api-version=2024-04-01" --headers Content-Type=application/json --body "$frontend_policy_body" --output none
+unset frontend_repository_token frontend_policy_body frontend_current_config
+az rest --method get --url "https://management.azure.com${frontend_resource_id}?api-version=2024-04-01" --query properties.deploymentAuthPolicy --output tsv
+```
+
+Once the policy is confirmed as `DeploymentToken`, revoke the temporary GitHub personal access token; future workflow deployments use the Azure deployment secret. If the request fails or the property remains `GitHub`, preserve the error output (without tokens) for diagnosis before retrying deployment. This repository-token requirement is described in [Microsoft Q&A](https://learn.microsoft.com/en-us/answers/questions/2125291/change-deployment-configuration-option-in-static-w).
+
+The policy-change request also supplies the existing repository URL, branch and build properties required by Azure. `skipGithubActionWorkflowGeneration` prevents Azure from generating a competing workflow. Existing build settings are retained; missing locations default to the original app root, no Functions API and `dist` output.
+
+After the first develop deployment, open Azure > smartquote-frontend > Environments and copy the `staging` URL. Add its exact origin (scheme and hostname, without a trailing slash) to the backend's allowed CORS origins alongside the existing production origin. No additional Static Web App is required.
 
 Use develop for integration, feature branches for focused changes, release branches for stabilization and hotfix branches for urgent production fixes. Merge verified releases into main and back into develop. Use conventional commits and semantic versions. Group changes by completed behavior and review the diff and checks before committing or pushing.
