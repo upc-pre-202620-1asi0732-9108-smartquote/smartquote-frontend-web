@@ -93,4 +93,20 @@ Build output is static dist/. `npm run preview` serves the production build loca
 
 ## Collaboration
 
+### CI/CD
+
+GitHub Actions runs lint, unit tests, the production build and the default Playwright browser suite before deployment. Tests requiring a real local backend remain opt-in; this pipeline does not run them against Azure.
+
+| Event | Result |
+| --- | --- |
+| Push to a feature branch or pull request into develop/main | Validation only. |
+| Push to develop | Validation, then deployment to the named Azure Static Web Apps preview environment `staging`. |
+| Push to main | Validation, then deployment to the existing production site. |
+
+Deployment uploads the exact `dist/` artifact from validation without rebuilding it. A failed check blocks publication. The former Azure-generated workflow is replaced to avoid competing deployments. Production now updates from `main`, rather than `develop`.
+
+Keep the existing repository secret `AZURE_STATIC_WEB_APPS_API_TOKEN_AGREEABLE_BUSH_0F1889D10`. Optionally set repository variables `PRODUCTION_API_BASE_URL` and `STAGING_API_BASE_URL` under GitHub Settings > Secrets and variables > Actions > Variables. Both default to the current Azure backend; a frontend preview does not create or deploy a separate backend. Public API URLs are embedded at build time, so Azure runtime environment settings alone do not change them.
+
+After the first develop deployment, open Azure > smartquote-frontend > Environments and copy the `staging` URL. Add its exact origin (scheme and hostname, without a trailing slash) to the backend's allowed CORS origins alongside the existing production origin. The workflows preserve the existing deployment secret and GitHub identity token authentication. No additional Static Web App is required.
+
 Use develop for integration, feature branches for focused changes, release branches for stabilization and hotfix branches for urgent production fixes. Merge verified releases into main and back into develop. Use conventional commits and semantic versions. Group changes by completed behavior and review the diff and checks before committing or pushing.
