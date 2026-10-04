@@ -17,11 +17,16 @@ import Select from "primevue/select";
 import AccessPage from "../identity/presentation/access-page.vue";
 import Terms from "../shared/presentation/components/terms-dialog.vue";
 
-import { createServices, createSessionService } from "./composition-root.js";
+import {
+  createRegistrationService,
+  createServices,
+  createSessionService,
+} from "./composition-root.js";
 import { router } from "./router.js";
 const { t, locale } = useI18n(),
   primevue = usePrimeVue();
 const auth = createSessionService();
+const registration = createRegistrationService();
 const session = shallowRef(null),
   pending = ref(0),
   mobile = ref(false),
@@ -32,6 +37,9 @@ const services = computed(() =>
 async function login(email, password) {
   session.value = await auth.login(email, password);
   await router.replace("/requests");
+}
+function register(account) {
+  return registration.register(account);
 }
 function focusMain() {
   document.getElementById("main-content")?.focus();
@@ -101,7 +109,14 @@ const links = computed(() => [
       ]
     : []),
   ...(session.value?.manager
-    ? [{ to: "/metrics", label: t("metricsTitle"), icon: "pi pi-chart-bar" }]
+    ? [
+        {
+          to: "/registrations",
+          label: t("registrationsTitle"),
+          icon: "pi pi-user-plus",
+        },
+        { to: "/metrics", label: t("metricsTitle"), icon: "pi pi-chart-bar" },
+      ]
     : []),
 ]);
 const removeGuard = router.beforeEach((to) => {
@@ -129,7 +144,7 @@ onUnmounted(() => {
 </script>
 <template>
   <main v-if="restoring" class="access-page"><span class="muted">{{ t("restoringSession") }}</span></main>
-  <AccessPage v-else-if="!session" :login="login" />
+  <AccessPage v-else-if="!session" :login="login" :register="register" />
   <div v-else class="workspace">
     <a href="#main-content" class="skip-link" @click.prevent="focusMain">{{
       t("skipContent")

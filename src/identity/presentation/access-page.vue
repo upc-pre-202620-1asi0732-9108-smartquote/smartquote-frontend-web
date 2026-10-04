@@ -7,12 +7,17 @@ import Select from "primevue/select";
 import Field from "../../shared/presentation/components/form-field.vue";
 import Feedback from "../../shared/presentation/components/feedback-notice.vue";
 import Terms from "../../shared/presentation/components/terms-dialog.vue";
-const props = defineProps({ login: { type: Function, required: true } });
+import RegisterForm from "./register-form.vue";
+const props = defineProps({
+  login: { type: Function, required: true },
+  register: { type: Function, required: true },
+});
 const { t, locale } = useI18n();
 const email = ref(""),
   password = ref(""),
   busy = ref(false),
-  error = ref("");
+  error = ref(""),
+  mode = ref("signIn");
 async function submit() {
   busy.value = true;
   error.value = "";
@@ -52,6 +57,17 @@ async function submit() {
           :aria-label="t('language')"
           class="language-select"
         />
+        <template v-if="mode === 'register'">
+          <RegisterForm :register="register" />
+          <Button
+            class="mode-switch"
+            text
+            :label="t('haveAccount')"
+            icon="pi pi-arrow-left"
+            @click="mode = 'signIn'"
+          />
+        </template>
+        <template v-else>
         <h2>{{ t("accessTitle") }}</h2>
         <p class="muted">{{ t("accessIntro") }}</p>
         <Feedback :error="error" />
@@ -70,6 +86,14 @@ async function submit() {
         </form>
         <p class="access-note"><i class="pi pi-lock" />{{ t("loginNote") }}</p>
         <p class="help-text">{{ t("accessHelp") }}</p>
+        <Button
+          class="mode-switch"
+          text
+          :label="t('createAccount')"
+          icon="pi pi-user-plus"
+          @click="mode = 'register'"
+        />
+        </template>
         <Terms />
       </div>
     </section>

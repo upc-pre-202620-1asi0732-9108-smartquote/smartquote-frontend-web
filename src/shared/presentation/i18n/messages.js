@@ -24,6 +24,33 @@ export default {
     profileExpires: "expires",
     accessHelp:
       "If you cannot access your account, contact the SmartQuote administrator.",
+    createAccount: "Create an account",
+    createAccountTitle: "Create your SmartQuote account",
+    createAccountIntro:
+      "Request access to the purchasing workspace. Every account after the first one stays pending until a purchase manager activates it.",
+    haveAccount: "I already have an account",
+    displayName: "Full name",
+    confirmPassword: "Repeat the password",
+    accountRole: "Requested role",
+    registerSubmit: "Create account",
+    passwordRulesTitle: "Password requirements",
+    ruleLength: "Between 12 and 128 characters",
+    ruleUpper: "One uppercase letter",
+    ruleLower: "One lowercase letter",
+    ruleDigit: "One number",
+    ruleSymbol: "One symbol, such as ! or #",
+    ruleControl: "No control characters",
+    ruleEmail: "Does not contain the part of your email before {'@'}",
+    registerDoneActive:
+      "Account created. The first account is active, so you can sign in now.",
+    registerDonePending:
+      "Account created. It stays pending until a purchase manager activates it.",
+    registrationsTitle: "Access requests",
+    registrationsSubtitle:
+      "Review accounts waiting for activation and assign the role each one will have.",
+    registrationsEmpty: "There are no pending access requests.",
+    approveAccount: "Approve",
+    approvedAccount: "Account for {email} approved. It can now sign in.",
     tokenNote:
       "Tokens stay only in this browser tab. Sign out removes the active session; saved profiles disappear when the tab is closed.",
     accessStory: "From a purchase request to an informed decision.",
@@ -261,10 +288,20 @@ export default {
       TechnicalCompliance: "Technical compliance",
     },
     error: {
+      passwordMismatch: "The passwords do not match.",
+      passwordPolicy: "The password does not meet every requirement.",
+      invalidEmail: "Enter a valid email address.",
+      displayNameInvalid:
+        "Enter your full name: 2 to 150 letters, with only spaces, apostrophes, periods or hyphens.",
+      invalidRole: "Select a valid role.",
+      emailTaken: "This email is already registered.",
+      rateLimited: "Too many attempts. Wait a moment and try again.",
+      invalidRegistration: "The registration could not be completed.",
       invalidUrl:
         "Use HTTPS, or HTTP on localhost, without credentials or parameters.",
       invalidSession: "Use a valid token that has not expired.",
-      invalidCredentials: "Email or password is invalid.",
+      invalidCredentials:
+        "Email or password is invalid, or the account is still waiting for activation.",
       connection:
         "Cannot reach the API. Check its address and CORS. Refresh before repeating a timed out operation.",
       unauthorized:
@@ -327,6 +364,33 @@ export default {
     profileExpires: "vence",
     accessHelp:
       "Si no puedes acceder a tu cuenta, contacta al administrador de SmartQuote.",
+    createAccount: "Crear una cuenta",
+    createAccountTitle: "Crea tu cuenta de SmartQuote",
+    createAccountIntro:
+      "Solicita acceso al espacio de compras. Cada cuenta después de la primera queda pendiente hasta que un jefe de compras la active.",
+    haveAccount: "Ya tengo una cuenta",
+    displayName: "Nombre completo",
+    confirmPassword: "Repite la contraseña",
+    accountRole: "Rol solicitado",
+    registerSubmit: "Crear cuenta",
+    passwordRulesTitle: "Requisitos de la contraseña",
+    ruleLength: "Entre 12 y 128 caracteres",
+    ruleUpper: "Una letra mayúscula",
+    ruleLower: "Una letra minúscula",
+    ruleDigit: "Un número",
+    ruleSymbol: "Un símbolo, como ! o #",
+    ruleControl: "Sin caracteres de control",
+    ruleEmail: "No contiene la parte del correo antes de {'@'}",
+    registerDoneActive:
+      "Cuenta creada. La primera cuenta queda activa, así que ya puedes iniciar sesión.",
+    registerDonePending:
+      "Cuenta creada. Quedará pendiente hasta que un jefe de compras la active.",
+    registrationsTitle: "Solicitudes de acceso",
+    registrationsSubtitle:
+      "Revisa las cuentas que esperan activación y asigna el rol que tendrá cada una.",
+    registrationsEmpty: "No hay solicitudes de acceso pendientes.",
+    approveAccount: "Aprobar",
+    approvedAccount: "La cuenta de {email} fue aprobada. Ya puede iniciar sesión.",
     tokenNote:
       "Los tokens solo permanecen en esta pestaña. Cerrar sesión elimina la sesión activa; los perfiles guardados desaparecen al cerrar la pestaña.",
     accessStory: "De una solicitud de compra a una decisión sustentada.",
@@ -565,10 +629,20 @@ export default {
       TechnicalCompliance: "Cumplimiento técnico",
     },
     error: {
+      passwordMismatch: "Las contraseñas no coinciden.",
+      passwordPolicy: "La contraseña no cumple todos los requisitos.",
+      invalidEmail: "Ingresa un correo válido.",
+      displayNameInvalid:
+        "Ingresa tu nombre completo: de 2 a 150 letras, con solo espacios, apóstrofes, puntos o guiones.",
+      invalidRole: "Selecciona un rol válido.",
+      emailTaken: "Este correo ya está registrado.",
+      rateLimited: "Demasiados intentos. Espera un momento y vuelve a intentarlo.",
+      invalidRegistration: "No se pudo completar el registro.",
       invalidUrl:
         "Usa HTTPS, o HTTP en localhost, sin credenciales ni parámetros.",
       invalidSession: "Utiliza un token válido que no haya vencido.",
-      invalidCredentials: "El correo o la contraseña son inválidos.",
+      invalidCredentials:
+        "El correo o la contraseña son inválidos, o la cuenta aún espera activación.",
       connection:
         "No se pudo contactar con la API. Revisa dirección y CORS. Actualiza antes de repetir una operación que tardó demasiado.",
       unauthorized:

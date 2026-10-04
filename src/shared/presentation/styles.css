@@ -401,6 +401,26 @@ fieldset {
 .access-note i {
   padding-top: 3px;
 }
+.password-rules {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 8px;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  color: var(--sq-muted);
+}
+.password-rules li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.password-rules li.is-ok {
+  color: var(--sq-success, #1e7a4a);
+}
+.mode-switch {
+  margin-top: 16px;
+}
 .language-select {
   max-width: 155px;
   display: flex;

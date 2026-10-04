@@ -1,6 +1,17 @@
 import { ApiError } from "../../shared/infrastructure/http-client.js";
 import { normalizeBaseUrl } from "../domain/session.entity.js";
 
+const REGISTRATION_CODES = {
+  400: "invalidRegistration",
+  409: "emailTaken",
+  429: "rateLimited",
+};
+
+function registrationFailure(error) {
+  const code = REGISTRATION_CODES[error.status];
+  return code ? new ApiError(error.status, code, error.detail) : error;
+}
+
 export class AuthApiRepository {
   constructor(baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080") {
     this.baseUrl = normalizeBaseUrl(baseUrl);
@@ -15,6 +26,22 @@ export class AuthApiRepository {
 
   refresh() {
     return this.request("/refresh", { method: "POST" });
+  }
+
+  async register(account) {
+    try {
+      return await this.request("/register", {
+        method: "POST",
+        body: JSON.stringify({
+          email: account.email,
+          displayName: account.displayName,
+          password: account.password,
+          role: account.role,
+        }),
+      });
+    } catch (error) {
+      throw registrationFailure(error);
+    }
   }
 
   async logout() {

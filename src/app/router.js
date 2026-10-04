@@ -26,6 +26,12 @@ export const router = createRouter({
         import("../supply-requests/presentation/pages/notification-list.vue"),
     },
     {
+      path: "/registrations",
+      meta: { roles: ["PurchaseManager"] },
+      component: () =>
+        import("../identity/presentation/pending-registrations-page.vue"),
+    },
+    {
       path: "/metrics",
       meta: { roles: ["PurchaseManager"] },
       component: () =>
