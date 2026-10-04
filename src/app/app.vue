@@ -100,6 +100,9 @@ const links = computed(() => [
         { to: "/notifications", label: t("notifications"), icon: "pi pi-bell" },
       ]
     : []),
+  ...(session.value?.manager
+    ? [{ to: "/metrics", label: t("metricsTitle"), icon: "pi pi-chart-bar" }]
+    : []),
 ]);
 const removeGuard = router.beforeEach((to) => {
   const allowedRoles = to.meta.roles;

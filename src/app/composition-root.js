@@ -7,6 +7,8 @@ import { HttpEvaluationRepository } from "../evaluation-simulation/infrastructur
 import { EvaluationService } from "../evaluation-simulation/application/evaluation.service.js";
 import { HttpPurchaseOrderRepository } from "../purchase-ordering/infrastructure/http-purchase-order.repository.js";
 import { PurchaseOrderService } from "../purchase-ordering/application/purchase-order.service.js";
+import { HttpPurchasingMetricsRepository } from "../purchase-ordering/infrastructure/http-purchasing-metrics.repository.js";
+import { PurchasingMetricsService } from "../purchase-ordering/application/purchasing-metrics.service.js";
 import { SessionService } from "../identity/application/session.service.js";
 import { AuthApiRepository } from "../identity/infrastructure/auth-api.repository.js";
 export function createSessionService() {
@@ -25,5 +27,6 @@ export function createServices(session) {
       new HttpPurchaseOrderRepository(http),
       evaluations,
     ),
+    metrics: new PurchasingMetricsService(new HttpPurchasingMetricsRepository(http)),
   };
 }

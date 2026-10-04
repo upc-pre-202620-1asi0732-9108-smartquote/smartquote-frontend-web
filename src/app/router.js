@@ -25,6 +25,12 @@ export const router = createRouter({
       component: () =>
         import("../supply-requests/presentation/pages/notification-list.vue"),
     },
+    {
+      path: "/metrics",
+      meta: { roles: ["PurchaseManager"] },
+      component: () =>
+        import("../purchase-ordering/presentation/metrics-page.vue"),
+    },
     { path: "/:pathMatch(.*)*", redirect: "/requests" },
   ],
 });
