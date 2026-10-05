@@ -8,4 +8,12 @@ export class PurchaseOrderRepository {
   approve() {
     throw new Error("Repository operation not implemented: approve");
   }
+
+  markDelivered() {
+    throw new Error("Repository operation not implemented: markDelivered");
+  }
+
+  evaluateDelivery() {
+    throw new Error("Repository operation not implemented: evaluateDelivery");
+  }
 }

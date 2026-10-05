@@ -14,6 +14,10 @@ import { AuthApiRepository } from "../identity/infrastructure/auth-api.repositor
 import { RegistrationService } from "../identity/application/registration.service.js";
 import { RegistrationApprovalService } from "../identity/application/registration-approval.service.js";
 import { HttpRegistrationApprovalRepository } from "../identity/infrastructure/http-registration-approval.repository.js";
+import { AuditTrailService } from "../audit-trail/application/audit-trail.service.js";
+import { HttpAuditTrailRepository } from "../audit-trail/infrastructure/http-audit-trail.repository.js";
+import { SupplierPerformanceService } from "../supplier-performance/application/supplier-performance.service.js";
+import { HttpSupplierPerformanceRepository } from "../supplier-performance/infrastructure/http-supplier-performance.repository.js";
 export function createSessionService() {
   return new SessionService(new AuthApiRepository());
 }
@@ -34,6 +38,8 @@ export function createServices(session) {
       evaluations,
     ),
     metrics: new PurchasingMetricsService(new HttpPurchasingMetricsRepository(http)),
+    audit: new AuditTrailService(new HttpAuditTrailRepository(http)),
+    suppliers: new SupplierPerformanceService(new HttpSupplierPerformanceRepository(http)),
     registrations: new RegistrationApprovalService(
       new HttpRegistrationApprovalRepository(http),
     ),

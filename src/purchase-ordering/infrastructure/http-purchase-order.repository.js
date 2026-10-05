@@ -15,6 +15,19 @@ export class HttpPurchaseOrderRepository extends PurchaseOrderRepository {
       await this.http.request(`/purchase-requests/${id}/purchase-order`, { signal }),
     );
   }
+  async markDelivered(orderId) {
+    return new PurchaseOrder(
+      await this.http.request(`/purchase-orders/${orderId}/delivery`, { method: "POST" }),
+    );
+  }
+
+  async evaluateDelivery(orderId, { onTimeScore, qualityScore, observations }) {
+    return this.http.request(`/purchase-orders/${orderId}/delivery-evaluation`, {
+      method: "POST",
+      body: JSON.stringify({ onTimeScore, qualityScore, observations: observations?.trim() || null }),
+    });
+  }
+
   async approve(run, quote, deliveryConditions, deliveryDestination) {
     return new PurchaseOrder(
       await this.http.request(

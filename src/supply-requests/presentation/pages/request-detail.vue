@@ -23,6 +23,7 @@ import { optional } from "../../../shared/application/optional.js";
 import QuotationPanel from "../../../quotation-intake/presentation/quotation-panel.vue";
 import ComparisonPanel from "../../../evaluation-simulation/presentation/comparison-panel.vue";
 import OrderPanel from "../../../purchase-ordering/presentation/order-panel.vue";
+import AuditTimeline from "../../../audit-trail/presentation/audit-timeline.vue";
 const { t } = useI18n(),
   format = useFormat(),
   route = useRoute(),
@@ -178,6 +179,7 @@ onUnmounted(() => abort.abort());
           t("comparison")
         }}</Tab
         ><Tab v-if="session.manager" value="order">{{ t("purchaseOrder") }}</Tab
+        ><Tab v-if="session.manager" value="trail">{{ t("auditTrail") }}</Tab
         ><Tab value="history">{{ t("history") }}</Tab></TabList
       ><TabPanels>
         <TabPanel value="request"
@@ -284,6 +286,9 @@ onUnmounted(() => abort.abort());
             :execute="execute"
             :refresh="refresh"
             @order="(value) => (order = value)"
+        /></TabPanel>
+        <TabPanel v-if="session.manager" value="trail"
+          ><AuditTimeline entity-type="PurchaseRequest" :entity-id="id"
         /></TabPanel>
         <TabPanel value="history"
           ><section class="panel">

@@ -10,6 +10,15 @@ export class PurchaseOrderService {
   findByRequest(id, signal) {
     return this.repository.findByRequest(id, signal);
   }
+  markDelivered(orderId) {
+    return this.repository.markDelivered(orderId);
+  }
+
+  async evaluateDelivery(orderId, evaluation) {
+    PurchaseOrder.validateEvaluation(evaluation);
+    return this.repository.evaluateDelivery(orderId, evaluation);
+  }
+
   async approve(requestId, runId, quoteId, conditions, destination) {
     const current = await this.evaluationService.currentSimulation(
       requestId,
