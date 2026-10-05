@@ -23,7 +23,7 @@ import { optional } from "../../../shared/application/optional.js";
 import QuotationPanel from "../../../quotation-intake/presentation/quotation-panel.vue";
 import ComparisonPanel from "../../../evaluation-simulation/presentation/comparison-panel.vue";
 import OrderPanel from "../../../purchase-ordering/presentation/order-panel.vue";
-import AuditTimeline from "../../../audit-trail/presentation/audit-timeline.vue";
+import AuditTimeline from "../../../purchase-ordering/presentation/audit-timeline.vue";
 const { t } = useI18n(),
   format = useFormat(),
   route = useRoute(),
@@ -257,6 +257,7 @@ onUnmounted(() => abort.abort());
             :busy="busy"
             :execute="execute"
             :refresh="refresh"
+            :error="error"
         /></TabPanel>
         <TabPanel v-if="session.purchasing" value="comparison"
           ><ComparisonPanel
@@ -337,6 +338,7 @@ onUnmounted(() => abort.abort());
       :header="t('changeStatus')"
       :style="{ width: '32rem' }"
       ><form @submit.prevent="updateStatus" class="stack">
+        <Feedback :error="error" />
         <Field :label="t('nextStatus')" v-slot="{ id: inputId }"
           ><Select
             :input-id="inputId"

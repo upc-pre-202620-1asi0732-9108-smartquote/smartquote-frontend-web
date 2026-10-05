@@ -1,6 +1,14 @@
 import { createServices } from "../../src/app/composition-root.js";
 import { Session } from "../../src/identity/domain/session.entity.js";
-export const parseSession = (baseUrl, token) => new Session(baseUrl, token);
+export const parseSession = (baseUrl, token) => {
+  const claims = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString("utf8"));
+  return new Session(
+    baseUrl,
+    token,
+    { userId: claims.sub, roles: [claims.role], displayName: claims.role },
+    claims.exp - Math.floor(Date.now() / 1000),
+  );
+};
 export class IntegrationClient {
   constructor(session) {
     this.session = session;
