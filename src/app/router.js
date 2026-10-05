@@ -1,8 +1,10 @@
 import { createRouter, createWebHashHistory } from "vue-router";
+import SaasAgreement from "../shared/presentation/components/saas-agreement.vue";
 export const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     { path: "/", redirect: "/requests" },
+    { path: "/acuerdo-saas", component: SaasAgreement },
     {
       path: "/requests",
       component: () =>

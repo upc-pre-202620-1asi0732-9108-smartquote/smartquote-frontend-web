@@ -9,13 +9,14 @@ import {
   watch,
 } from "vue";
 import { useI18n } from "vue-i18n";
-import { RouterLink, RouterView } from "vue-router";
+import { RouterLink, RouterView, useRoute } from "vue-router";
 import { usePrimeVue } from "primevue/config";
 import Button from "primevue/button";
 import Drawer from "primevue/drawer";
 import Select from "primevue/select";
 import AccessPage from "../identity/presentation/access-page.vue";
 import Terms from "../shared/presentation/components/terms-dialog.vue";
+import SaasAgreement from "../shared/presentation/components/saas-agreement.vue";
 
 import {
   createRegistrationService,
@@ -27,6 +28,7 @@ const { t, locale } = useI18n(),
   primevue = usePrimeVue();
 const auth = createSessionService();
 const registration = createRegistrationService();
+const route = useRoute();
 const session = shallowRef(null),
   pending = ref(0),
   mobile = ref(false),
@@ -147,6 +149,7 @@ onUnmounted(() => {
 </script>
 <template>
   <main v-if="restoring" class="access-page"><span class="muted">{{ t("restoringSession") }}</span></main>
+  <main v-else-if="!session && route.path === '/acuerdo-saas'" id="main-content" class="workspace-main" tabindex="-1"><SaasAgreement /></main>
   <AccessPage v-else-if="!session" :login="login" :register="register" />
   <div v-else class="workspace">
     <a href="#main-content" class="skip-link" @click.prevent="focusMain">{{

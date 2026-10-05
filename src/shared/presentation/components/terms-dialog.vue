@@ -10,6 +10,7 @@ const { t } = useI18n(),
     <button class="text-button" @click="visible = true">
       {{ t("terms") }}
     </button>
+    <a class="text-button" href="#/acuerdo-saas">{{ t("agreement.link") }}</a>
   </footer>
   <Dialog
     v-model:visible="visible"

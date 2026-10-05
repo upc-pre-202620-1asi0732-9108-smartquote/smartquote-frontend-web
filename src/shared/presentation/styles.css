@@ -561,6 +561,9 @@ fieldset {
   clip-path: none;
 }
 .app-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
   margin-top: 32px;
   font-size: 0.8rem;
   color: var(--sq-muted);
