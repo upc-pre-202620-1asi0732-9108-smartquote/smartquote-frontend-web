@@ -16,12 +16,14 @@ import { useWorkspace } from "../../shared/presentation/use-workspace.js";
 import { useFormat } from "../../shared/presentation/format.js";
 import { Quotation } from "../domain/quotation.entity.js";
 import { DomainError } from "../../shared/domain/domain-error.js";
+import Feedback from "../../shared/presentation/components/feedback-notice.vue";
 const props = defineProps({
   request: { type: Object, required: true },
   quotes: { type: Array, required: true },
   busy: Boolean,
   execute: { type: Function, required: true },
   refresh: { type: Function, required: true },
+  error: { type: String, default: "" },
 });
 const { t, te } = useI18n(),
   format = useFormat(),
@@ -376,6 +378,7 @@ async function confirm() {
     :header="t('uploadQuotes')"
     :style="{ width: '40rem' }"
     ><form class="stack" @submit.prevent="upload">
+      <Feedback :error="error" />
       <details v-if="files.length === 1">
         <summary>{{ t('optionalSupplierData') }}</summary>
       <div class="form-grid">
@@ -435,6 +438,7 @@ async function confirm() {
       }
     "
     ><form class="stack" @submit.prevent="correct">
+      <Feedback :error="error" />
       <Field :label="t('value')" v-slot="{ id }"
         ><InputText :id="id" v-model="value" required :disabled="busy" /></Field
       ><Field :label="t('reason')" v-slot="{ id }"
@@ -454,6 +458,7 @@ async function confirm() {
     @update:visible="(visible) => { if (!visible) specificationLine = null; }"
   >
     <form class="stack" @submit.prevent="addSpecification">
+      <Feedback :error="error" />
       <p class="help-text">{{ t('missingSpecificationHelp') }}</p>
       <Field :label="t('requirementName')" v-slot="{ id }"><InputText :id="id" v-model="newSpecification.name" required :disabled="busy" /></Field>
       <div class="form-grid">

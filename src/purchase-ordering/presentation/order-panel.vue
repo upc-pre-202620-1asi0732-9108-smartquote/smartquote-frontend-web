@@ -7,7 +7,7 @@ import Textarea from "primevue/textarea";
 import Select from "primevue/select";
 import Checkbox from "primevue/checkbox";
 import Field from "../../shared/presentation/components/form-field.vue";
-import AuditTimeline from "../../audit-trail/presentation/audit-timeline.vue";
+import AuditTimeline from "./audit-timeline.vue";
 import Status from "../../shared/presentation/components/status-chip.vue";
 import { useWorkspace } from "../../shared/presentation/use-workspace.js";
 import { useFormat } from "../../shared/presentation/format.js";

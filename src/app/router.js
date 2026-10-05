@@ -37,7 +37,7 @@ export const router = createRouter({
       path: "/suppliers",
       meta: { roles: ["PurchaseAnalyst", "PurchaseManager"] },
       component: () =>
-        import("../supplier-performance/presentation/supplier-performance-page.vue"),
+        import("../purchase-ordering/presentation/supplier-performance-page.vue"),
     },
     {
       path: "/metrics",

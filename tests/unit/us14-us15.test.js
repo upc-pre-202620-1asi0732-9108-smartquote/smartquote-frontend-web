@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { AuditTrailService } from "../../src/audit-trail/application/audit-trail.service.js";
-import { SupplierPerformanceService } from "../../src/supplier-performance/application/supplier-performance.service.js";
+import { AuditTrailService } from "../../src/purchase-ordering/application/audit-trail.service.js";
+import { SupplierPerformanceService } from "../../src/purchase-ordering/application/supplier-performance.service.js";
 import { PurchaseOrder } from "../../src/purchase-ordering/domain/purchase-order.entity.js";
 import { PurchaseOrderService } from "../../src/purchase-ordering/application/purchase-order.service.js";
 

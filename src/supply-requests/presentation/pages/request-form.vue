@@ -32,6 +32,7 @@ const item = () => ({
 });
 const suggestedDate = new Date();
 suggestedDate.setDate(suggestedDate.getDate() + 7);
+const todayIso = new Date().toLocaleDateString("en-CA");
 const form = ref({
   requiredDate: `${suggestedDate.getFullYear()}-${String(suggestedDate.getMonth() + 1).padStart(2, "0")}-${String(suggestedDate.getDate()).padStart(2, "0")}`,
   priority: "Normal",
@@ -70,6 +71,7 @@ async function submit() {
             :id="id"
             v-model="form.requiredDate"
             type="date"
+            :min="todayIso"
             required /></Field
         ><Field :label="t('priority')" v-slot="{ id }"
           ><Select
@@ -104,7 +106,7 @@ async function submit() {
         </div>
         <div class="item-fields">
           <Field :label="t('description')" v-slot="{ id }"
-            ><InputText :id="id" v-model="entry.description" required /></Field
+            ><InputText :id="id" v-model="entry.description" required maxlength="250" /></Field
           ><Field :label="t('quantity')" v-slot="{ id }"
             ><InputNumber
               :input-id="id"
@@ -113,7 +115,7 @@ async function submit() {
               :max-fraction-digits="3"
               required /></Field
           ><Field :label="t('unit')" v-slot="{ id }"
-            ><InputText :id="id" v-model="entry.unitOfMeasure" required
+            ><InputText :id="id" v-model="entry.unitOfMeasure" required maxlength="30"
           /></Field>
         </div>
         <h3>{{ t("requirements") }}</h3>
@@ -123,7 +125,7 @@ async function submit() {
           class="requirement-form"
         >
           <Field :label="t('requirementName')" v-slot="{ id }"
-            ><InputText :id="id" v-model="req.name" required /></Field
+            ><InputText :id="id" v-model="req.name" required maxlength="150" /></Field
           ><Field :label="t('operator')" v-slot="{ id }"
             ><Select
               :input-id="id"
@@ -140,9 +142,9 @@ async function submit() {
               option-label="label"
               option-value="value" /></Field
           ><Field :label="t('expectedValue')" v-slot="{ id }"
-            ><InputText :id="id" v-model="req.expectedValue" required /></Field
+            ><InputText :id="id" v-model="req.expectedValue" required maxlength="250" /></Field
           ><Field :label="t('unit')" v-slot="{ id }"
-            ><InputText :id="id" v-model="req.unitOfMeasure" /></Field
+            ><InputText :id="id" v-model="req.unitOfMeasure" maxlength="30" /></Field
           ><label class="check-label" :for="'mandatory-' + index + '-' + ri"
             ><Checkbox
               :input-id="'mandatory-' + index + '-' + ri"

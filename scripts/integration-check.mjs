@@ -245,10 +245,9 @@ assert.equal(
   order.purchaseOrderId,
 );
 passed("real purchase order, lookup, and idempotent approval");
-for (const next of ["Approved", "Ordered"]) {
-  await manager.changeStatus(request, next, `Order ${order.orderNumber}`);
-  request = await manager.request(request.requestId);
-}
+// Approving the purchase order moves the request to Ordered on the backend
+// (IOrderRequestLifecycle.EnsureOrderedAsync), so no manual transition is needed.
+request = await manager.request(request.requestId);
 assert.equal(request.status, "Ordered");
 passed("request completes as Ordered");
 const notifications = await production.notifications();

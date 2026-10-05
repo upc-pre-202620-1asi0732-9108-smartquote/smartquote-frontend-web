@@ -23,6 +23,7 @@ export class QuotationService {
       field && Quotation.editable(field.fieldPath),
       "fieldReadOnly",
     );
+    requireCondition(String(value).trim(), "valueRequired");
     requireCondition(reason.trim(), "reasonRequired");
     return this.repository.correct(quote, fieldId, String(value), reason);
   }

@@ -14,10 +14,10 @@ import { AuthApiRepository } from "../identity/infrastructure/auth-api.repositor
 import { RegistrationService } from "../identity/application/registration.service.js";
 import { RegistrationApprovalService } from "../identity/application/registration-approval.service.js";
 import { HttpRegistrationApprovalRepository } from "../identity/infrastructure/http-registration-approval.repository.js";
-import { AuditTrailService } from "../audit-trail/application/audit-trail.service.js";
-import { HttpAuditTrailRepository } from "../audit-trail/infrastructure/http-audit-trail.repository.js";
-import { SupplierPerformanceService } from "../supplier-performance/application/supplier-performance.service.js";
-import { HttpSupplierPerformanceRepository } from "../supplier-performance/infrastructure/http-supplier-performance.repository.js";
+import { AuditTrailService } from "../purchase-ordering/application/audit-trail.service.js";
+import { HttpAuditTrailRepository } from "../purchase-ordering/infrastructure/http-audit-trail.repository.js";
+import { SupplierPerformanceService } from "../purchase-ordering/application/supplier-performance.service.js";
+import { HttpSupplierPerformanceRepository } from "../purchase-ordering/infrastructure/http-supplier-performance.repository.js";
 export function createSessionService() {
   return new SessionService(new AuthApiRepository());
 }
