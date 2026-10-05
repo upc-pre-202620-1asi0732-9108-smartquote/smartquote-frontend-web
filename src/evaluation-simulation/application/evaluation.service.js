@@ -22,6 +22,9 @@ export class EvaluationService {
   simulation(id, signal) {
     return this.repository.simulation(id, signal);
   }
+  listForRequest(id, signal) {
+    return this.repository.listForRequest(id, signal);
+  }
   async currentSimulation(requestId, id, signal) {
     const [run, current] = await Promise.all([
       this.repository.simulation(id, signal),

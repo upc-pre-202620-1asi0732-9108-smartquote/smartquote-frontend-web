@@ -1,14 +1,17 @@
 import { test, expect } from "@playwright/test";
-import { readFileSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { fixture } from "../support/pdf-fixture.js";
-const api = process.env.SMARTQUOTE_API_URL || "http://127.0.0.1:5088";
-const token = (role) =>
-  readFileSync(".local/" + role + "-token.txt", "utf8").trim();
+const credentials = {
+  production: "production@smartquote.local",
+  manager: "manager@smartquote.local",
+};
 async function signIn(page, role) {
-  await page.getByLabel("Backend address", { exact: true }).fill(api);
-  await page.getByLabel("Access token", { exact: true }).fill(token(role));
+  await page.getByLabel("Email address", { exact: true }).fill(credentials[role]);
   await page
-    .getByRole("button", { name: "Connect to SmartQuote", exact: true })
+    .getByLabel("Password", { exact: true })
+    .fill(process.env.SMARTQUOTE_BOOTSTRAP_PASSWORD || "");
+  await page
+    .getByRole("button", { name: "Sign in", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: "Sign out", exact: true }),
@@ -19,13 +22,13 @@ test("English default, Spanish persistence and responsive access screen", async 
 }) => {
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Welcome to your workspace" }),
+    page.getByRole("heading", { name: "Sign in to SmartQuote" }),
   ).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "en-US");
   await page.getByRole("combobox", { name: "Language", exact: true }).click();
   await page.getByRole("option", { name: "Español", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Bienvenido a tu espacio de trabajo" }),
+    page.getByRole("heading", { name: "Inicia sesión en SmartQuote" }),
   ).toBeVisible();
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("lang", "es-419");
@@ -36,12 +39,51 @@ test("English default, Spanish persistence and responsive access screen", async 
     ),
   ).toBe(true);
 });
+test("IAM login authenticates a production account through the local API", async ({
+  page,
+}) => {
+  test.skip(
+    process.env.SMARTQUOTE_E2E_AUTH !== "1" ||
+      !process.env.SMARTQUOTE_BOOTSTRAP_PASSWORD,
+    "Requires a local API with bootstrapped IAM accounts and SMARTQUOTE_BOOTSTRAP_PASSWORD",
+  );
+  await page.goto("/");
+  await signIn(page, "production");
+  await expect(
+    page.getByRole("button", { name: "New request", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Sign in to SmartQuote" }),
+  ).toBeVisible();
+});
+test("manager can reopen a stored comparison and order without a browser-stored run ID", async ({ page }) => {
+  test.skip(
+    process.env.SMARTQUOTE_E2E_READONLY !== "1" ||
+      !process.env.SMARTQUOTE_BOOTSTRAP_PASSWORD ||
+      !process.env.SMARTQUOTE_E2E_REQUEST_ID,
+    "Requires an existing local request with a simulation and order",
+  );
+  await page.goto("/");
+  await signIn(page, "manager");
+  await page.goto(`/#/requests/${process.env.SMARTQUOTE_E2E_REQUEST_ID}`);
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await page.getByRole("tab", { name: "History", exact: true }).click();
+  await expect(page.getByText("Saved comparisons")).toBeVisible();
+  await page.getByRole("tab", { name: "Purchase order", exact: true }).click();
+  await expect(page.locator(".order-document")).toBeVisible();
+  await page.reload();
+  await page.getByRole("tab", { name: "Purchase order", exact: true }).click();
+  await expect(page.locator(".order-document")).toBeVisible();
+});
 test("production creates a request and manager completes the purchasing workflow against the real API", async ({
   page,
 }) => {
   test.skip(
-    process.env.SMARTQUOTE_E2E_REAL !== "1",
-    "Requires local API and tokens from test:integration",
+    process.env.SMARTQUOTE_E2E_REAL !== "1" ||
+      !process.env.SMARTQUOTE_BOOTSTRAP_PASSWORD ||
+      process.env.SMARTQUOTE_E2E_STUB !== "1",
+    "Requires a local Stub AI backend, bootstrapped IAM accounts and SMARTQUOTE_BOOTSTRAP_PASSWORD",
   );
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -71,70 +113,34 @@ test("production creates a request and manager completes the purchasing workflow
   ).toBeEnabled();
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await signIn(page, "manager");
+  await page
+    .getByRole("button", { name: "Open " + description, exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: description, exact: true, level: 1 }),
   ).toBeVisible();
-  async function changeStatus(next) {
-    await page
-      .getByRole("button", { name: "Change status", exact: true })
-      .click();
-    const dialog = page.getByRole("dialog", {
-      name: "Change status",
-      exact: true,
-    });
-    await dialog
-      .getByRole("combobox", { name: "Next status", exact: true })
-      .click();
-    await page.getByRole("option", { name: next, exact: true }).click();
-    await dialog
-      .getByLabel("Reason", { exact: true })
-      .fill("Browser integration review");
-    await dialog.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(dialog).not.toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Refresh", exact: true }),
-    ).toBeEnabled();
-  }
-  await changeStatus("Under review");
-  await changeStatus("Collecting quotations");
+  await page.getByRole("button", { name: "Start collecting quotations", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Start evaluation", exact: true })).toBeDisabled();
   await page.getByRole("tab", { name: /Quotations/ }).click();
+  await page.getByRole("button", { name: "Upload quotations", exact: true }).click();
+  const upload = page.getByRole("dialog", { name: "Upload quotations", exact: true });
+  const pdfs = [];
   for (const supplier of ["Browser supplier A", "Browser supplier B"]) {
-    await page
-      .getByRole("button", { name: "Upload quotations", exact: true })
-      .click();
-    const upload = page.getByRole("dialog", {
-      name: "Upload quotations",
-      exact: true,
-    });
-    await upload
-      .getByLabel("Supplier reference", { exact: true })
-      .fill(supplier);
-    await upload
-      .getByLabel("Tax identifier", { exact: true })
-      .fill("TEST-BROWSER-" + supplier.slice(-1));
-    await upload.getByLabel("Business name", { exact: true }).fill(supplier);
     const pdf = fixture(supplier);
-    await upload.getByLabel("Select PDF files", { exact: true }).setInputFiles({
+    pdfs.push({
       name: pdf.name,
       mimeType: "application/pdf",
       buffer: Buffer.from(await pdf.arrayBuffer()),
     });
-    await upload.getByRole("button", { name: "Upload", exact: true }).click();
-    await expect(
-      upload.getByText(pdf.name + " · Completed", { exact: true }),
-    ).toBeVisible();
-    await upload.getByRole("button", { name: "Cancel", exact: true }).click();
-    await page
-      .getByRole("button", { name: "Process PDF", exact: true })
-      .click();
-    await expect(
-      page.getByRole("heading", { name: supplier, exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Refresh", exact: true }),
-    ).toBeEnabled();
-    await page.getByRole("combobox", { name: /Select an item/ }).click();
-    await page.getByRole("option", { name: description, exact: true }).click();
+  }
+  await upload.getByLabel("Select PDF files", { exact: true }).setInputFiles(pdfs);
+  await upload.getByRole("button", { name: "Upload", exact: true }).click();
+  await expect(upload.getByText("2 / 2 files processed")).toBeVisible();
+  await page.keyboard.press("Escape");
+  for (const supplier of ["Browser supplier A", "Browser supplier B"]) {
+    await page.getByRole("row").filter({ hasText: `${supplier}.pdf` })
+      .getByRole("button", { name: "Review", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Local Demo Supplier", exact: true })).toBeVisible();
     await page
       .getByLabel("I reviewed the extracted fields and line mappings.", {
         exact: true,
@@ -150,11 +156,8 @@ test("production creates a request and manager completes the purchasing workflow
       page.getByRole("button", { name: "Refresh", exact: true }),
     ).toBeEnabled();
   }
-  await changeStatus("Evaluation");
+  await expect(page.getByRole("button", { name: "Start evaluation", exact: true })).toHaveCount(0);
   await page.getByRole("tab", { name: "Comparison", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Save criteria version", exact: true })
-    .click();
   await expect(
     page.getByRole("button", { name: "Run comparison", exact: true }),
   ).toBeEnabled();
@@ -162,7 +165,7 @@ test("production creates a request and manager completes the purchasing workflow
     .getByRole("button", { name: "Run comparison", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: /^Browser supplier [AB]$/ }).first(),
+    page.getByRole("heading", { name: "Local Demo Supplier", exact: true }).first(),
   ).toBeVisible();
   mkdirSync(".local", { recursive: true });
   await page.evaluate(() => window.scrollTo(0, 0));
@@ -190,12 +193,7 @@ test("production creates a request and manager completes the purchasing workflow
   await expect(
     page.getByRole("button", { name: "Print order", exact: true }),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Mark request as ordered", exact: true })
-    .click();
-  await expect(
-    page.getByRole("button", { name: "Mark request as ordered", exact: true }),
-  ).not.toBeVisible();
+  await expect(page.getByText("Ordered", { exact: true }).first()).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({

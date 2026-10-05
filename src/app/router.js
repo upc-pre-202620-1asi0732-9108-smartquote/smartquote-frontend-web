@@ -10,6 +10,7 @@ export const router = createRouter({
     },
     {
       path: "/requests/new",
+      meta: { roles: ["ProductionSpecialist"] },
       component: () =>
         import("../supply-requests/presentation/pages/request-form.vue"),
     },
@@ -20,8 +21,21 @@ export const router = createRouter({
     },
     {
       path: "/notifications",
+      meta: { roles: ["ProductionSpecialist"] },
       component: () =>
         import("../supply-requests/presentation/pages/notification-list.vue"),
+    },
+    {
+      path: "/registrations",
+      meta: { roles: ["PurchaseManager"] },
+      component: () =>
+        import("../identity/presentation/pending-registrations-page.vue"),
+    },
+    {
+      path: "/metrics",
+      meta: { roles: ["PurchaseManager"] },
+      component: () =>
+        import("../purchase-ordering/presentation/metrics-page.vue"),
     },
     { path: "/:pathMatch(.*)*", redirect: "/requests" },
   ],

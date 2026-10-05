@@ -26,6 +26,12 @@ export class QuotationService {
     requireCondition(reason.trim(), "reasonRequired");
     return this.repository.correct(quote, fieldId, String(value), reason);
   }
+  addSpecification(quote, lineId, data) {
+    requireCondition(quote.lines.some((line) => line.lineId === lineId), "mappingRequired");
+    requireCondition(data.name.trim() && data.value.trim() && data.sourceTextReference.trim() &&
+      data.reason.trim() && Number(data.sourcePageNumber) > 0, "invalidRequirement");
+    return this.repository.addSpecification(quote, lineId, data);
+  }
   confirm(quote, mappings) {
     new Quotation(quote).assertMappings(mappings);
     return this.repository.confirm(quote, mappings);

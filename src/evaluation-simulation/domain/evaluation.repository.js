@@ -14,4 +14,7 @@ export class EvaluationRepository {
   simulation() {
     throw new Error("Repository operation not implemented: simulation");
   }
+  listForRequest() {
+    throw new Error("Repository operation not implemented: listForRequest");
+  }
 }

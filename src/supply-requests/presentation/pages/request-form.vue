@@ -30,7 +30,13 @@ const item = () => ({
   unitOfMeasure: "",
   requirements: [requirement()],
 });
-const form = ref({ requiredDate: "", priority: "Normal", items: [item()] });
+const suggestedDate = new Date();
+suggestedDate.setDate(suggestedDate.getDate() + 7);
+const form = ref({
+  requiredDate: `${suggestedDate.getFullYear()}-${String(suggestedDate.getMonth() + 1).padStart(2, "0")}-${String(suggestedDate.getDate()).padStart(2, "0")}`,
+  priority: "Normal",
+  items: [item()],
+});
 async function submit() {
   const result = await execute(() =>
     services.value.requests.create(form.value),

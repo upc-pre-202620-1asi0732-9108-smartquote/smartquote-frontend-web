@@ -20,17 +20,12 @@ export class Quotation {
     );
   }
   static editable(path) {
-    return /^(validUntil|currency|deliveryLeadTimeDays|lines\[\d+\]\.(description|quantity|unitOfMeasure|unitPrice))$/.test(
+    return /^(supplier\.(businessName|taxIdentifier)|validUntil|currency|deliveryLeadTimeDays|lines\[\d+\]\.(description|quantity|unitOfMeasure|unitPrice|specifications\[\d+\]\.value))$/.test(
       path,
     );
   }
   static validateUpload(supplier, file) {
-    requireCondition(
-      Object.values(supplier).every(
-        (value) => typeof value === "string" && value.trim(),
-      ) && Object.keys(supplier).length === 3,
-      "supplierRequired",
-    );
+    requireCondition(Object.keys(supplier).length === 3, "supplierRequired");
     requireCondition(
       file.size > 0 &&
         file.size <= 15 * 1024 * 1024 &&

@@ -10,6 +10,11 @@ export class HttpPurchaseOrderRepository extends PurchaseOrderRepository {
       await this.http.request(`/simulations/${id}/purchase-order`),
     );
   }
+  async findByRequest(id, signal) {
+    return new PurchaseOrder(
+      await this.http.request(`/purchase-requests/${id}/purchase-order`, { signal }),
+    );
+  }
   async approve(run, quote, deliveryConditions, deliveryDestination) {
     return new PurchaseOrder(
       await this.http.request(

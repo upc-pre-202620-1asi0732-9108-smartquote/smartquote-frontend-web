@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, nextTick } from "vue";
 import { useI18n } from "vue-i18n";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
@@ -8,6 +8,7 @@ import Select from "primevue/select";
 import Checkbox from "primevue/checkbox";
 import Textarea from "primevue/textarea";
 import DataTable from "primevue/datatable";
+import ProgressBar from "primevue/progressbar";
 import Column from "primevue/column";
 import Field from "../../shared/presentation/components/form-field.vue";
 import Status from "../../shared/presentation/components/status-chip.vue";
@@ -30,9 +31,12 @@ const uploadVisible = ref(false),
   results = ref([]),
   selectedId = ref(""),
   editField = ref(null),
+  specificationLine = ref(null),
+  newSpecification = ref({ name: "", value: "", unitOfMeasure: "", sourcePageNumber: 1, sourceTextReference: "", reason: "" }),
   value = ref(""),
   reason = ref(""),
   reviewed = ref(false),
+  showAllFields = ref(false),
   mappings = ref({});
 const supplier = ref({
   supplierId: "",
@@ -42,14 +46,48 @@ const supplier = ref({
 const selected = computed(() =>
   props.quotes.find((q) => q.quotationId === selectedId.value),
 );
+const reviewFields = computed(() => {
+  const fields = selected.value?.fields ?? [];
+  return [...fields]
+    .filter((field) => showAllFields.value || field.status === "Unresolved" ||
+      field.fieldPath.startsWith("supplier.") || field.fieldPath.includes(".specifications[") || field.isRequired)
+    .sort((a, b) => Number(b.status === "Unresolved") - Number(a.status === "Unresolved"));
+});
+function suggestedItem(line) {
+  if (line.requestedItemId) return line.requestedItemId;
+  if (props.request.items.length === 1) return props.request.items[0].itemId;
+  const normalize = (text) => String(text || "").toLocaleLowerCase().normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ").trim();
+  const description = normalize(line.description);
+  const matches = props.request.items.filter((item) => {
+    const requested = normalize(item.description);
+    return requested && (description.includes(requested) || requested.includes(description));
+  });
+  return matches.length === 1 ? matches[0].itemId : "";
+}
 function select(quote) {
   selectedId.value = quote.quotationId;
   reviewed.value = false;
+  showAllFields.value = false;
   mappings.value = Object.fromEntries(
-    quote.lines.map((l) => [l.lineId, l.requestedItemId || ""]),
+    quote.lines.map((l) => [l.lineId, suggestedItem(l)]),
   );
 }
+function openSpecification(line) {
+  const item = props.request.items.find((entry) => entry.itemId === mappings.value[line.lineId]);
+  const missing = item?.requirements.find((requirement) =>
+    !line.specifications.some((specification) =>
+      specification.name.toLocaleLowerCase() === requirement.name.toLocaleLowerCase()));
+  newSpecification.value = {
+    name: missing?.name || "", value: "", unitOfMeasure: missing?.unitOfMeasure || "",
+    sourcePageNumber: 1, sourceTextReference: "", reason: "",
+  };
+  specificationLine.value = line;
+}
 function label(path) {
+  const specification = /^lines\[(\d+)\]\.specifications\[(\d+)\]\.value$/.exec(path);
+  if (specification)
+    return `${t('technicalValue')}: ${selected.value?.lines[Number(specification[1])]?.specifications?.[Number(specification[2])]?.name || path}`;
   const tail = path.replace(/^lines\[\d+\]\./, "");
   const key =
     tail === "unitOfMeasure"
@@ -58,6 +96,10 @@ function label(path) {
         ? "deliveryDays"
         : tail === "supplier.businessName"
           ? "supplierName"
+          : tail === "supplier.taxIdentifier"
+            ? "taxId"
+            : tail.includes(".specifications[")
+              ? "technicalValue"
           : tail;
   return te(key) ? t(key) : path;
 }
@@ -65,26 +107,31 @@ async function upload() {
   await props.execute(async () => {
     if (files.value.length < 1 || files.value.length > 20)
       throw new DomainError("pdfCount");
-    results.value = [];
-    for (const file of files.value) {
-      try {
-        await services.value.quotations.upload(
-          props.request.requestId,
-          supplier.value,
-          file,
-        );
-        results.value.push({ name: file.name, ok: true });
-      } catch (e) {
-        results.value.push({
-          name: file.name,
-          ok: false,
-          error: t("error." + (e.code || "unexpected")),
-        });
+    const pending = [...files.value];
+    results.value = pending.map((file, index) => ({ index, name: file.name, stage: "waiting" }));
+    let cursor = 0;
+    async function worker() {
+      while (cursor < pending.length) {
+        const index = cursor++;
+        const file = pending[index];
+        try {
+          results.value[index].stage = "uploading";
+          const metadata = pending.length === 1 ? supplier.value :
+            { supplierId: "", supplierBusinessName: "", supplierTaxIdentifier: "" };
+          const quote = await services.value.quotations.upload(props.request.requestId, metadata, file);
+          results.value[index].stage = "processing";
+          if (quote.status === "Uploaded" || quote.status === "Rejected")
+            await services.value.quotations.process(quote.quotationId);
+          results.value[index].stage = "done";
+        } catch (e) {
+          results.value[index].stage = "error";
+          results.value[index].error = e.message || t("error.unexpected");
+        }
+        await nextTick();
       }
     }
-    files.value = files.value.filter((file) =>
-      results.value.some((r) => r.name === file.name && !r.ok),
-    );
+    await Promise.all(Array.from({ length: Math.min(2, pending.length) }, worker));
+    files.value = pending.filter((_, index) => results.value[index].stage === "error");
     await props.refresh();
   });
 }
@@ -111,10 +158,26 @@ async function correct() {
     await props.refresh();
   }, t("saved"));
 }
+async function addSpecification() {
+  await props.execute(async () => {
+    await services.value.quotations.addSpecification(selected.value, specificationLine.value.lineId, newSpecification.value);
+    specificationLine.value = null;
+    newSpecification.value = { name: "", value: "", unitOfMeasure: "", sourcePageNumber: 1, sourceTextReference: "", reason: "" };
+    reviewed.value = false;
+    await props.refresh();
+  }, t("saved"));
+}
 async function confirm() {
   await props.execute(async () => {
     await services.value.quotations.confirm(selected.value, mappings.value);
     await props.refresh();
+    const updated = await services.value.quotations.list(props.request.requestId);
+    if (props.request.status === "QuotationCollection" && updated.filter((quote) => quote.verified).length >= 2) {
+      const current = await services.value.requests.get(props.request.requestId);
+      if (current.status === "QuotationCollection")
+        await services.value.requests.changeStatus(current, "Evaluation", "Dos o más cotizaciones verificadas están listas para comparar.");
+      await props.refresh();
+    }
     reviewed.value = false;
   }, t("verified"));
 }
@@ -144,7 +207,7 @@ async function confirm() {
         ><p class="empty-state">{{ t("emptyQuotes") }}</p></template
       ><Column :header="t('supplier')"
         ><template #body="{ data: q }"
-          ><strong>{{ q.supplierBusinessName }}</strong
+          ><strong>{{ q.supplierBusinessName || t('supplierPending') }}</strong
           ><small class="muted block">{{ q.fileName }}</small></template
         ></Column
       ><Column :header="t('status')"
@@ -158,7 +221,8 @@ async function confirm() {
         ><template #body="{ data: q }"
           ><div class="inline-row">
             <Button
-              v-if="q.status === 'Uploaded'"
+              v-if="['Uploaded', 'Rejected'].includes(q.status) ||
+                (q.status === 'Processing' && Date.now() - new Date(q.updatedAt).getTime() > 120000)"
               :label="t('process')"
               size="small"
               :disabled="busy"
@@ -174,7 +238,7 @@ async function confirm() {
   <section v-if="selected" class="panel quote-review">
     <div class="section-heading">
       <div>
-        <h2>{{ selected.supplierBusinessName }}</h2>
+        <h2>{{ selected.supplierBusinessName || t('supplierPending') }}</h2>
         <Status :value="selected.status" />
       </div>
       <Button
@@ -204,9 +268,13 @@ async function confirm() {
         }}</strong>
       </div>
     </div>
+    <div class="section-heading">
+      <h3>{{ t('reviewExceptions') }}</h3>
+      <Button :label="showAllFields ? t('showPriorityFields') : t('showAllFields')" text @click="showAllFields = !showAllFields" />
+    </div>
     <div class="extracted-grid">
       <article
-        v-for="field in selected.fields"
+        v-for="field in reviewFields"
         :key="field.fieldId"
         class="field-card"
       >
@@ -236,7 +304,7 @@ async function confirm() {
             Quotation.editable(field.fieldPath) &&
             selected.status === 'RequiresVerification'
           "
-          :label="t('correct')"
+          :label="field.fieldPath.startsWith('supplier.') ? t('confirmSupplierField') : t('correct')"
           icon="pi pi-pencil"
           text
           :disabled="busy"
@@ -261,7 +329,8 @@ async function confirm() {
       >
         <span
           >{{ line.description }} · {{ line.quantity }}
-          {{ line.unitOfMeasure }}</span
+          {{ line.unitOfMeasure }}
+          <small v-if="mappings[line.lineId] && !line.requestedItemId" class="muted"> · {{ t('suggestedMapping') }}</small></span
         ><Select
           v-model="mappings[line.lineId]"
           :options="
@@ -275,6 +344,15 @@ async function confirm() {
           :placeholder="t('selectItem')"
           :aria-label="t('selectItem') + ' ' + line.description"
           :disabled="busy || selected.status !== 'RequiresVerification'"
+        />
+        <Button
+          v-if="selected.status === 'RequiresVerification'"
+          :label="t('addMissingSpecification')"
+          icon="pi pi-plus"
+          text
+          size="small"
+          :disabled="busy"
+          @click="openSpecification(line)"
         />
       </div>
       <template v-if="selected.status === 'RequiresVerification'"
@@ -298,20 +376,20 @@ async function confirm() {
     :header="t('uploadQuotes')"
     :style="{ width: '40rem' }"
     ><form class="stack" @submit.prevent="upload">
+      <details v-if="files.length === 1">
+        <summary>{{ t('optionalSupplierData') }}</summary>
       <div class="form-grid">
         <Field :label="t('supplierId')" v-slot="{ id }"
           ><InputText
             :id="id"
             v-model="supplier.supplierId"
             maxlength="100"
-            required
             :disabled="busy" /></Field
         ><Field :label="t('taxId')" v-slot="{ id }"
           ><InputText
             :id="id"
             v-model="supplier.supplierTaxIdentifier"
             maxlength="20"
-            required
             :disabled="busy"
         /></Field>
       </div>
@@ -320,9 +398,9 @@ async function confirm() {
           :id="id"
           v-model="supplier.supplierBusinessName"
           maxlength="200"
-          required
-          :disabled="busy" /></Field
-      ><Field :label="t('selectPdfs')" v-slot="{ id }"
+          :disabled="busy" /></Field>
+      </details>
+      <Field :label="t('selectPdfs')" v-slot="{ id }"
         ><input
           :id="id"
           type="file"
@@ -332,9 +410,16 @@ async function confirm() {
           @change="files = Array.from($event.target.files || [])"
       /></Field>
       <p class="help-text">{{ t("pdfHelp") }}</p>
+      <p v-if="results.length" role="status">{{ results.filter((result) => result.stage === 'done').length }} / {{ results.length }} {{ t('processedFiles') }}</p>
       <ul>
-        <li v-for="result in results" :key="result.name">
-          {{ result.name }} · {{ result.ok ? t("success") : result.error }}
+        <li v-for="result in results" :key="result.index">
+          {{ result.name }} · {{ result.error || t('uploadStage.' + result.stage) }}
+          <ProgressBar
+            v-if="['uploading', 'processing'].includes(result.stage)"
+            mode="indeterminate"
+            :show-value="false"
+            style="height: 0.4rem; margin-top: 0.4rem"
+          />
         </li>
       </ul>
       <Button type="submit" :label="t('upload')" :loading="busy" /></form
@@ -361,4 +446,24 @@ async function confirm() {
           :disabled="busy" /></Field
       ><Button type="submit" :label="t('save')" :loading="busy" /></form
   ></Dialog>
+  <Dialog
+    :visible="!!specificationLine"
+    modal
+    :header="t('addMissingSpecification')"
+    :style="{ width: '36rem' }"
+    @update:visible="(visible) => { if (!visible) specificationLine = null; }"
+  >
+    <form class="stack" @submit.prevent="addSpecification">
+      <p class="help-text">{{ t('missingSpecificationHelp') }}</p>
+      <Field :label="t('requirementName')" v-slot="{ id }"><InputText :id="id" v-model="newSpecification.name" required :disabled="busy" /></Field>
+      <div class="form-grid">
+        <Field :label="t('value')" v-slot="{ id }"><InputText :id="id" v-model="newSpecification.value" required :disabled="busy" /></Field>
+        <Field :label="t('unit')" v-slot="{ id }"><InputText :id="id" v-model="newSpecification.unitOfMeasure" :disabled="busy" /></Field>
+      </div>
+      <Field :label="t('page')" v-slot="{ id }"><input :id="id" v-model.number="newSpecification.sourcePageNumber" type="number" min="1" required :disabled="busy" /></Field>
+      <Field :label="t('evidence')" v-slot="{ id }"><Textarea :id="id" v-model="newSpecification.sourceTextReference" rows="2" required :disabled="busy" /></Field>
+      <Field :label="t('reason')" v-slot="{ id }"><Textarea :id="id" v-model="newSpecification.reason" rows="2" required :disabled="busy" /></Field>
+      <Button type="submit" :label="t('save')" :loading="busy" />
+    </form>
+  </Dialog>
 </template>

@@ -7,12 +7,18 @@ import { HttpEvaluationRepository } from "../evaluation-simulation/infrastructur
 import { EvaluationService } from "../evaluation-simulation/application/evaluation.service.js";
 import { HttpPurchaseOrderRepository } from "../purchase-ordering/infrastructure/http-purchase-order.repository.js";
 import { PurchaseOrderService } from "../purchase-ordering/application/purchase-order.service.js";
+import { HttpPurchasingMetricsRepository } from "../purchase-ordering/infrastructure/http-purchasing-metrics.repository.js";
+import { PurchasingMetricsService } from "../purchase-ordering/application/purchasing-metrics.service.js";
 import { SessionService } from "../identity/application/session.service.js";
-import { BrowserSessionRepository } from "../identity/infrastructure/browser-session.repository.js";
+import { AuthApiRepository } from "../identity/infrastructure/auth-api.repository.js";
+import { RegistrationService } from "../identity/application/registration.service.js";
+import { RegistrationApprovalService } from "../identity/application/registration-approval.service.js";
+import { HttpRegistrationApprovalRepository } from "../identity/infrastructure/http-registration-approval.repository.js";
 export function createSessionService() {
-  return new SessionService(new BrowserSessionRepository(), (session) =>
-    createServices(session).requests.list(),
-  );
+  return new SessionService(new AuthApiRepository());
+}
+export function createRegistrationService() {
+  return new RegistrationService(new AuthApiRepository());
 }
 export function createServices(session) {
   const http = new HttpClient(session);
@@ -26,6 +32,10 @@ export function createServices(session) {
     orders: new PurchaseOrderService(
       new HttpPurchaseOrderRepository(http),
       evaluations,
+    ),
+    metrics: new PurchasingMetricsService(new HttpPurchasingMetricsRepository(http)),
+    registrations: new RegistrationApprovalService(
+      new HttpRegistrationApprovalRepository(http),
     ),
   };
 }
