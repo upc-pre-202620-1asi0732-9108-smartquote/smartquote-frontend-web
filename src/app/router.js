@@ -32,6 +32,12 @@ export const router = createRouter({
         import("../identity/presentation/pending-registrations-page.vue"),
     },
     {
+      path: "/suppliers",
+      meta: { roles: ["PurchaseAnalyst", "PurchaseManager"] },
+      component: () =>
+        import("../supplier-performance/presentation/supplier-performance-page.vue"),
+    },
+    {
       path: "/metrics",
       meta: { roles: ["PurchaseManager"] },
       component: () =>

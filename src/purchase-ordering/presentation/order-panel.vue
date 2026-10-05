@@ -7,6 +7,7 @@ import Textarea from "primevue/textarea";
 import Select from "primevue/select";
 import Checkbox from "primevue/checkbox";
 import Field from "../../shared/presentation/components/form-field.vue";
+import AuditTimeline from "../../audit-trail/presentation/audit-timeline.vue";
 import Status from "../../shared/presentation/components/status-chip.vue";
 import { useWorkspace } from "../../shared/presentation/use-workspace.js";
 import { useFormat } from "../../shared/presentation/format.js";
@@ -23,6 +24,33 @@ const emit = defineEmits(["order"]);
 const { t } = useI18n(),
   format = useFormat(),
   { services, session } = useWorkspace();
+const onTime = ref(null),
+  quality = ref(null),
+  notes = ref("");
+const scoreOptions = [1, 2, 3, 4, 5].map((value) => ({ value, label: String(value) }));
+
+async function markDelivered() {
+  await props.execute(async () => {
+    const delivered = await services.value.orders.markDelivered(props.order.purchaseOrderId);
+    emit("order", delivered);
+    await props.refresh();
+  }, t("deliveredDone"));
+}
+
+async function evaluate() {
+  await props.execute(async () => {
+    await services.value.orders.evaluateDelivery(props.order.purchaseOrderId, {
+      onTimeScore: onTime.value,
+      qualityScore: quality.value,
+      observations: notes.value,
+    });
+    onTime.value = null;
+    quality.value = null;
+    notes.value = "";
+    await props.refresh();
+  }, t("evaluationSaved"));
+}
+
 const chosen = ref(""),
   destination = ref(""),
   conditions = ref(""),
@@ -132,6 +160,28 @@ function print() {
         ><span class="identifier">{{ order.purchaseOrderId }}</span>
       </footer>
     </article>
+    <section v-if="order.status === 'Issued'" class="panel stack">
+      <h2>{{ t("deliveryTitle") }}</h2>
+      <p class="muted">{{ t("deliveryHelp") }}</p>
+      <div>
+        <Button :label="t('markDelivered')" icon="pi pi-check" :loading="busy" @click="markDelivered" />
+      </div>
+    </section>
+    <form v-else-if="order.status === 'Delivered'" class="panel stack" @submit.prevent="evaluate">
+      <h2>{{ t("supplierEvaluation") }}</h2>
+      <Field :label="t('onTimeScore')" v-slot="{ id }"
+        ><Select :input-id="id" v-model="onTime" :options="scoreOptions" option-label="label" option-value="value" :disabled="busy"
+      /></Field>
+      <Field :label="t('qualityScore')" v-slot="{ id }"
+        ><Select :input-id="id" v-model="quality" :options="scoreOptions" option-label="label" option-value="value" :disabled="busy"
+      /></Field>
+      <Field :label="t('evaluationNotes')" v-slot="{ id }"
+        ><Textarea :id="id" v-model="notes" rows="3" :disabled="busy" /></Field>
+      <div>
+        <Button type="submit" :label="t('saveEvaluation')" icon="pi pi-star" :loading="busy" />
+      </div>
+    </form>
+    <AuditTimeline entity-type="PurchaseOrder" :entity-id="order.purchaseOrderId" />
   </template>
   <form
     v-else-if="simulation?.isCurrent && eligible.length"

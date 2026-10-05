@@ -108,6 +108,9 @@ const links = computed(() => [
         { to: "/notifications", label: t("notifications"), icon: "pi pi-bell" },
       ]
     : []),
+  ...(session.value?.purchasing
+    ? [{ to: "/suppliers", label: t("suppliersTitle"), icon: "pi pi-truck" }]
+    : []),
   ...(session.value?.manager
     ? [
         {
