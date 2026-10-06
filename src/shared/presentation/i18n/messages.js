@@ -398,6 +398,7 @@ export default {
       invalidRole: "Select a valid role.",
       emailTaken: "This email is already registered.",
       rateLimited: "Too many attempts. Wait a moment and try again.",
+      loginRateLimited: "Too many sign-in attempts. Wait up to 15 seconds and try again.",
       invalidRegistration: "The registration could not be completed.",
       invalidUrl:
         "Use HTTPS, or HTTP on localhost, without credentials or parameters.",
@@ -842,6 +843,7 @@ export default {
       invalidRole: "Selecciona un rol válido.",
       emailTaken: "Este correo ya está registrado.",
       rateLimited: "Demasiados intentos. Espera un momento y vuelve a intentarlo.",
+      loginRateLimited: "Demasiados intentos de inicio de sesión. Espera hasta 15 segundos y vuelve a intentarlo.",
       invalidRegistration: "No se pudo completar el registro.",
       invalidUrl:
         "Usa HTTPS, o HTTP en localhost, sin credenciales ni parámetros.",

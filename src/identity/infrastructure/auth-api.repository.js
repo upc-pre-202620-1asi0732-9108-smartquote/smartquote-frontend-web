@@ -73,7 +73,8 @@ export class AuthApiRepository {
       const problem = await response.json().catch(() => ({}));
       throw new ApiError(
         response.status,
-        response.status === 401 ? "invalidCredentials" : "api",
+        response.status === 401 ? "invalidCredentials"
+          : response.status === 429 && path === "/login" ? "loginRateLimited" : "api",
         problem.detail || problem.title || "",
       );
     }
