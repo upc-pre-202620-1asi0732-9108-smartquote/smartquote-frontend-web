@@ -14,4 +14,8 @@ export class RegistrationApprovalService {
     requireCondition(REGISTRATION_ROLES.includes(role), "invalidRole");
     return this.repository.approve(userId, role);
   }
+
+  async reject(userId) {
+    return this.repository.reject(userId);
+  }
 }

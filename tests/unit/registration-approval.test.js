@@ -37,3 +37,17 @@ test("pending list is returned unchanged from the repository", async () => {
   });
   assert.deepEqual(await service.pending(), rows);
 });
+
+test("rejection sends only the account id to the reject endpoint", async () => {
+  let sent;
+  const service = new RegistrationApprovalService({
+    pending: async () => [],
+    approve: async () => {},
+    reject: async (userId) => {
+      sent = userId;
+      return { userId };
+    },
+  });
+  await service.reject("user-2");
+  assert.equal(sent, "user-2");
+});

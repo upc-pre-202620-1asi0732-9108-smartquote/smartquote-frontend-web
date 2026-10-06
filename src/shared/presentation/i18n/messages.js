@@ -80,6 +80,9 @@ export default {
       "Review accounts waiting for activation and assign the role each one will have.",
     registrationsEmpty: "There are no pending access requests.",
     approveAccount: "Approve",
+    rejectAccount: "Reject",
+    rejectedAccount: "Access request for {email} was rejected.",
+    rejectConfirm: "Reject the access request for {email}? This person will not be able to sign in with it.",
     approvedAccount: "Account for {email} approved. It can now sign in.",
     tokenNote:
       "Tokens stay only in this browser tab. Sign out removes the active session; saved profiles disappear when the tab is closed.",
@@ -524,6 +527,9 @@ export default {
       "Revisa las cuentas que esperan activación y asigna el rol que tendrá cada una.",
     registrationsEmpty: "No hay solicitudes de acceso pendientes.",
     approveAccount: "Aprobar",
+    rejectAccount: "Rechazar",
+    rejectedAccount: "La solicitud de acceso de {email} fue rechazada.",
+    rejectConfirm: "¿Rechazar la solicitud de acceso de {email}? Esa persona no podrá iniciar sesión con ella.",
     approvedAccount: "La cuenta de {email} fue aprobada. Ya puede iniciar sesión.",
     tokenNote:
       "Los tokens solo permanecen en esta pestaña. Cerrar sesión elimina la sesión activa; los perfiles guardados desaparecen al cerrar la pestaña.",
