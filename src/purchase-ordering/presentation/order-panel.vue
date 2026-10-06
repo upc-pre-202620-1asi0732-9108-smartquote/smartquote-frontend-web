@@ -97,11 +97,11 @@ function print() {
 }
 </script>
 <template>
-  <p v-if="!session.manager" class="empty-state">{{ t("managerOnly") }}</p>
+  <p v-if="!session.purchasing" class="empty-state">{{ t("managerOnly") }}</p>
   <template v-else-if="order"
     ><div class="section-heading no-print">
       <h2>{{ t("purchaseOrder") }}</h2>
-      <Button :label="t('print')" icon="pi pi-print" outlined @click="print" />
+      <Button v-if="session.manager" :label="t('print')" icon="pi pi-print" outlined @click="print" />
     </div>
     <article class="panel order-document">
       <header>
@@ -170,21 +170,22 @@ function print() {
     <form v-else-if="order.status === 'Delivered'" class="panel stack" @submit.prevent="evaluate">
       <h2>{{ t("supplierEvaluation") }}</h2>
       <Field :label="t('onTimeScore')" v-slot="{ id }"
-        ><Select :input-id="id" v-model="onTime" :options="scoreOptions" option-label="label" option-value="value" :disabled="busy"
+        ><Select :input-id="id" :aria-label="t('onTimeScore')" v-model="onTime" :options="scoreOptions" option-label="label" option-value="value" :disabled="busy"
       /></Field>
       <Field :label="t('qualityScore')" v-slot="{ id }"
-        ><Select :input-id="id" v-model="quality" :options="scoreOptions" option-label="label" option-value="value" :disabled="busy"
+        ><Select :input-id="id" :aria-label="t('qualityScore')" v-model="quality" :options="scoreOptions" option-label="label" option-value="value" :disabled="busy"
       /></Field>
       <Field :label="t('evaluationNotes')" v-slot="{ id }"
-        ><Textarea :id="id" v-model="notes" rows="3" :disabled="busy" /></Field>
+        ><Textarea :id="id" v-model="notes" rows="3" maxlength="500" :disabled="busy" /></Field>
+      <p class="help-text">{{ t("evaluationNotesLimit") }} {{ notes.length }} / 500</p>
       <div>
         <Button type="submit" :label="t('saveEvaluation')" icon="pi pi-star" :loading="busy" />
       </div>
     </form>
-    <AuditTimeline entity-type="PurchaseOrder" :entity-id="order.purchaseOrderId" />
+    <AuditTimeline v-if="session.manager" entity-type="PurchaseOrder" :entity-id="order.purchaseOrderId" />
   </template>
   <form
-    v-else-if="simulation?.isCurrent && eligible.length"
+    v-else-if="session.manager && simulation?.isCurrent && eligible.length"
     class="panel stack"
     @submit.prevent="approve"
   >
@@ -233,5 +234,5 @@ function print() {
       :disabled="busy || !confirmed || !quoteId"
     />
   </form>
-  <p v-else class="empty-state">{{ t("orderMissing") }}</p>
+  <p v-else class="empty-state">{{ t(session.manager ? "orderMissing" : "managerOnly") }}</p>
 </template>

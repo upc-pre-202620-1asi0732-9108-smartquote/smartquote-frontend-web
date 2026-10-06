@@ -53,7 +53,7 @@ async function refresh() {
       ? optional(api.evaluations.current(id, abort.signal))
       : null,
     session.value.purchasing ? api.evaluations.listForRequest(id, abort.signal) : [],
-    session.value.manager ? optional(api.orders.findByRequest(id, abort.signal)) : null,
+    session.value.purchasing ? optional(api.orders.findByRequest(id, abort.signal)) : null,
   ]);
   request.value = r;
   history.value = h.entries;
@@ -178,7 +178,7 @@ onUnmounted(() => abort.abort());
         ><Tab v-if="session.purchasing" value="comparison">{{
           t("comparison")
         }}</Tab
-        ><Tab v-if="session.manager" value="order">{{ t("purchaseOrder") }}</Tab
+        ><Tab v-if="session.purchasing" value="order">{{ t("purchaseOrder") }}</Tab
         ><Tab v-if="session.manager" value="trail">{{ t("auditTrail") }}</Tab
         ><Tab value="history">{{ t("history") }}</Tab></TabList
       ><TabPanels>
@@ -277,7 +277,7 @@ onUnmounted(() => abort.abort());
             "
             @order="tab = 'order'"
         /></TabPanel>
-        <TabPanel v-if="session.manager" value="order"
+        <TabPanel v-if="session.purchasing" value="order"
           ><OrderPanel
             :request="request"
             :quotes="quotes"

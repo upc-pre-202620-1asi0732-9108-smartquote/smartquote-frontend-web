@@ -4,6 +4,7 @@ import { AuditTrailService } from "../../src/purchase-ordering/application/audit
 import { SupplierPerformanceService } from "../../src/purchase-ordering/application/supplier-performance.service.js";
 import { PurchaseOrder } from "../../src/purchase-ordering/domain/purchase-order.entity.js";
 import { PurchaseOrderService } from "../../src/purchase-ordering/application/purchase-order.service.js";
+import { HttpSupplierPerformanceRepository } from "../../src/purchase-ordering/infrastructure/http-supplier-performance.repository.js";
 
 const ID = "4c1d2b3a-0000-4000-8000-000000000001";
 
@@ -29,6 +30,7 @@ test("supplier performance trims and requires an 11-digit tax identifier", async
 });
 
 test("delivery evaluation requires whole scores from 1 to 5 and bounded observations", () => {
+  assert.doesNotThrow(() => PurchaseOrder.validateEvaluation({ onTimeScore: 5, qualityScore: 4, observations: "x".repeat(500) }));
   assert.doesNotThrow(() => PurchaseOrder.validateEvaluation({ onTimeScore: 1, qualityScore: 5, observations: "" }));
   for (const bad of [0, 6, 3.5, null]) {
     assert.throws(() => PurchaseOrder.validateEvaluation({ onTimeScore: bad, qualityScore: 4 }), { code: "invalidScore" });
@@ -37,6 +39,30 @@ test("delivery evaluation requires whole scores from 1 to 5 and bounded observat
     () => PurchaseOrder.validateEvaluation({ onTimeScore: 4, qualityScore: 4, observations: "x".repeat(501) }),
     { code: "observationsTooLong" },
   );
+});
+
+test("supplier history preserves the server summary and the individual evaluation contract", async () => {
+  const response = {
+    supplierTaxIdentifier: "20123456789", evaluationCount: 1,
+    averageOnTimeScore: 5, averageQualityScore: 4, overallScore: 4.5,
+    firstEvaluatedAt: "2026-10-05T12:00:00Z", lastEvaluatedAt: "2026-10-05T12:00:00Z",
+    evaluations: [{ deliveryEvaluationId: ID, purchaseOrderId: ID, evaluatedBy: ID,
+      evaluatedAt: "2026-10-05T12:00:00Z", onTimeScore: 5, qualityScore: 4,
+      observations: "Entrega completa" }],
+  };
+  const repository = new HttpSupplierPerformanceRepository({ request: async (path) => {
+    assert.equal(path, "/suppliers/20123456789/performance");
+    return response;
+  } });
+  const performance = await repository.performance("20123456789");
+  assert.deepEqual(performance.evaluations, response.evaluations);
+  assert.equal(performance.overallScore, 4.5);
+  assert.equal(performance.lastEvaluatedAt, response.lastEvaluatedAt);
+});
+
+test("missing history from an older API is not presented as an empty history", async () => {
+  const repository = new HttpSupplierPerformanceRepository({ request: async () => ({ evaluationCount: 2 }) });
+  assert.equal((await repository.performance("20123456789")).evaluations, null);
 });
 
 test("order service validates the evaluation before calling the repository", async () => {
