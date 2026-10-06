@@ -97,5 +97,35 @@ onUnmounted(() => controller?.abort());
         </p>
       </div>
     </div>
+    <template v-if="performance.evaluationCount">
+      <h2>{{ t("supplierEvaluationHistory") }}</h2>
+      <p v-if="performance.evaluations === null" class="muted">
+        {{ t("evaluationHistoryUnavailable") }}
+      </p>
+      <div v-else class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ t("date") }}</th>
+              <th>{{ t("purchaseOrder") }}</th>
+              <th>{{ t("onTimeScore") }}</th>
+              <th>{{ t("qualityScore") }}</th>
+              <th>{{ t("evaluationNotes") }}</th>
+              <th>{{ t("actor") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="evaluation in performance.evaluations" :key="evaluation.deliveryEvaluationId">
+              <td>{{ format.date(evaluation.evaluatedAt, true) }}</td>
+              <td class="identifier">{{ evaluation.purchaseOrderId }}</td>
+              <td>{{ score(evaluation.onTimeScore) }} / 5</td>
+              <td>{{ score(evaluation.qualityScore) }} / 5</td>
+              <td>{{ evaluation.observations || t("notAvailable") }}</td>
+              <td class="identifier">{{ evaluation.evaluatedBy }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </template>
   </section>
 </template>

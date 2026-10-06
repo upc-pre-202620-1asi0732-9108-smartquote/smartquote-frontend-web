@@ -13,4 +13,10 @@ export class HttpRegistrationApprovalRepository {
       body: JSON.stringify({ role }),
     });
   }
+
+  reject(userId) {
+    return this.http.request(`/iam/registration-requests/${userId}/reject`, {
+      method: "POST",
+    });
+  }
 }

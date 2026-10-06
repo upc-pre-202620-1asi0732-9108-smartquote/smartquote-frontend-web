@@ -46,6 +46,14 @@ async function approve(item) {
   }, t("approvedAccount", { email: item.email }));
 }
 
+async function reject(item) {
+  if (!window.confirm(t("rejectConfirm", { email: item.email }))) return;
+  await execute(async () => {
+    await services.value.registrations.reject(item.userId);
+    requests.value = requests.value.filter((row) => row.userId !== item.userId);
+  }, t("rejectedAccount", { email: item.email }));
+}
+
 onMounted(load);
 onUnmounted(() => controller?.abort());
 </script>
@@ -95,13 +103,24 @@ onUnmounted(() => controller?.abort());
       </Column>
       <Column>
         <template #body="{ data: item }">
-          <Button
-            :label="t('approveAccount')"
-            icon="pi pi-check"
-            size="small"
-            :disabled="busy"
-            @click="approve(item)"
-          />
+          <div class="actions">
+            <Button
+              :label="t('approveAccount')"
+              icon="pi pi-check"
+              size="small"
+              :disabled="busy"
+              @click="approve(item)"
+            />
+            <Button
+              :label="t('rejectAccount')"
+              icon="pi pi-times"
+              size="small"
+              severity="danger"
+              text
+              :disabled="busy"
+              @click="reject(item)"
+            />
+          </div>
         </template>
       </Column>
     </DataTable>
