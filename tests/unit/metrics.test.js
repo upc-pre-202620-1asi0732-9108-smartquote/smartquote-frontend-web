@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { PurchasingMetricsService } from "../../src/purchase-ordering/application/purchasing-metrics.service.js";
 import { HttpPurchasingMetricsRepository } from "../../src/purchase-ordering/infrastructure/http-purchasing-metrics.repository.js";
 
-test("purchasing metrics send the selected period and keep unavailable values as null", async () => {
+// US14 E2 E3: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US14 E2 E3 — purchasing metrics send the selected period and keep unavailable values as null", async () => {
   let requested;
   const signal = new AbortController().signal;
   const repository = new HttpPurchasingMetricsRepository({

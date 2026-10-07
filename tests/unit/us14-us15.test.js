@@ -8,7 +8,8 @@ import { HttpSupplierPerformanceRepository } from "../../src/purchase-ordering/i
 
 const ID = "4c1d2b3a-0000-4000-8000-000000000001";
 
-test("audit timeline only accepts audited entity types and well-formed identifiers", async () => {
+// US12 E1 E2 E3: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US12 E1 E2 E3 — audit timeline only accepts audited entity types and well-formed identifiers", async () => {
   let calls = 0;
   const service = new AuditTrailService({ timeline: async () => { calls++; return []; } });
   await assert.rejects(service.timeline("Supplier", ID), { code: "invalidAuditEntity" });
@@ -18,7 +19,8 @@ test("audit timeline only accepts audited entity types and well-formed identifie
   assert.equal(calls, 1);
 });
 
-test("supplier performance trims and requires an 11-digit tax identifier", async () => {
+// US13 E3: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US13 E3 — supplier performance trims and requires an 11-digit tax identifier", async () => {
   let sent;
   const service = new SupplierPerformanceService({
     performance: async (taxId) => { sent = taxId; return { supplierTaxIdentifier: taxId }; },
@@ -29,7 +31,8 @@ test("supplier performance trims and requires an 11-digit tax identifier", async
   assert.equal(sent, "20698765432");
 });
 
-test("delivery evaluation requires whole scores from 1 to 5 and bounded observations", () => {
+// US13 E2: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US13 E2 — delivery evaluation requires whole scores from 1 to 5 and bounded observations", () => {
   assert.doesNotThrow(() => PurchaseOrder.validateEvaluation({ onTimeScore: 5, qualityScore: 4, observations: "x".repeat(500) }));
   assert.doesNotThrow(() => PurchaseOrder.validateEvaluation({ onTimeScore: 1, qualityScore: 5, observations: "" }));
   for (const bad of [0, 6, 3.5, null]) {
@@ -41,7 +44,8 @@ test("delivery evaluation requires whole scores from 1 to 5 and bounded observat
   );
 });
 
-test("supplier history preserves the server summary and the individual evaluation contract", async () => {
+// US13 E3: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US13 E3 — supplier history preserves the server summary and the individual evaluation contract", async () => {
   const response = {
     supplierTaxIdentifier: "20123456789", evaluationCount: 1,
     averageOnTimeScore: 5, averageQualityScore: 4, overallScore: 4.5,
@@ -60,12 +64,14 @@ test("supplier history preserves the server summary and the individual evaluatio
   assert.equal(performance.lastEvaluatedAt, response.lastEvaluatedAt);
 });
 
-test("missing history from an older API is not presented as an empty history", async () => {
+// US13 E3: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US13 E3 — missing history from an older API is not presented as an empty history", async () => {
   const repository = new HttpSupplierPerformanceRepository({ request: async () => ({ evaluationCount: 2 }) });
   assert.equal((await repository.performance("20123456789")).evaluations, null);
 });
 
-test("order service validates the evaluation before calling the repository", async () => {
+// US13 E1 E2: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US13 E1 E2 — order service validates the evaluation before calling the repository", async () => {
   let calls = 0;
   const service = new PurchaseOrderService(
     { evaluateDelivery: async () => { calls++; } },

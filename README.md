@@ -66,21 +66,16 @@ npm run lint
 npm test
 npm run build
 npx playwright install chromium
-npm run test:e2e
+npm run test:e2e:ui
 ```
 
-The default browser suite checks language switching, persistence and the responsive login page. The purchasing browser test requires local bootstrapped IAM accounts:
+For a specific client story, use `npm run test:story -- US07`. To run the real purchasing browser flow without modifying your demo database, open Docker Desktop and run:
 
 ```powershell
-$env:SMARTQUOTE_API_URL = 'http://localhost:8080'
-$env:SMARTQUOTE_BOOTSTRAP_PASSWORD = 'your-local-bootstrap-password'
-$env:SMARTQUOTE_E2E_AUTH = '1' # Runs only the real IAM login check.
-$env:SMARTQUOTE_E2E_STUB = '1' # Set AI__Provider=Stub in the backend first.
-$env:SMARTQUOTE_E2E_REAL = '1'
-npm run test:e2e
+& E:\smartquote-web-services\tests\run-tests.ps1 -Level Integration -ClientOnly -ClientDirectory E:\smartquote-frontend-web -ClientCommand 'npm run test:integration; if ($LASTEXITCODE -eq 0) { npm run test:e2e:live }'
 ```
 
-For an installed Microsoft Edge browser, optionally set PLAYWRIGHT_CHANNEL=msedge. The integration test requires `AI__Provider=Stub` and applied migrations. It is restricted to localhost and creates persistent test data. Reports and screenshots remain in ignored `.local/`. See [validation results](docs/integration-validation.md).
+For an installed Microsoft Edge browser, optionally set PLAYWRIGHT_CHANNEL=msedge. The harness creates a temporary API, PostgreSQL and real IAM accounts, runs the tests, then removes the environment. Extraction uses the explicit Stub, not real OpenAI. Reports, screenshots and PDF remain in ignored `.local/`; tokens are not written to reports.
 
 Build output is static dist/. `npm run preview` serves the production build locally.
 
@@ -88,14 +83,14 @@ Build output is static dist/. `npm run preview` serves the production build loca
 
 - Stub extraction validates upload, processing and review, not extraction accuracy for arbitrary PDFs. Configure and validate the backend provider for real supplier documents.
 - The current backend exposes no PDF download or server-side order export. Orders use browser printing.
-- A superseded scenario can still return isCurrent=true. The client checks the active scenario again before approval. The backend should enforce this as well to cover concurrent requests and other clients.
+- Client and backend reject approvals based on superseded criteria; this is covered by isolated API/PostgreSQL tests. Concurrent stress has not been measured.
 - Hosting the frontend does not deploy its API or PostgreSQL.
 
 ## Collaboration
 
 ### CI/CD
 
-GitHub Actions runs lint, unit tests, the production build and the default Playwright browser suite before deployment. Tests requiring a real local backend remain opt-in; this pipeline does not run them against Azure.
+GitHub Actions runs lint, unit tests, build, browser UI tests and a required isolated API/PostgreSQL purchasing job before deployment. No test writes to Azure. Push the backend test harness first; then set **Settings → Secrets and variables → Actions → Variables → New repository variable**: `SMARTQUOTE_BACKEND_TEST_REF`, with the full 40-character SHA of that backend commit. The job fails clearly if this compatible revision is missing; it does not use `latest` or silently omit tests.
 
 | Event | Result |
 | --- | --- |

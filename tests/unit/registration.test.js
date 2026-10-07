@@ -11,11 +11,13 @@ import { ApiError } from "../../src/shared/infrastructure/http-client.js";
 const email = "ana.lopez@smartquote.local";
 const strong = "Granja-Norte-2026!";
 
-test("password policy accepts a password that meets every rule", () => {
+// US09 E1: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US09 E1 — password policy accepts a password that meets every rule", () => {
   assert.equal(isPasswordValid(strong, email), true);
 });
 
-test("password policy reports each rule that a weak password breaks", () => {
+// US09 E2: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US09 E2 — password policy reports each rule that a weak password breaks", () => {
   const rules = passwordRules("short", email);
   assert.equal(rules.length, false);
   assert.equal(rules.upper, false);
@@ -24,11 +26,13 @@ test("password policy reports each rule that a weak password breaks", () => {
   assert.equal(rules.lower, true);
 });
 
-test("password policy rejects a password containing the email name", () => {
+// US09 E2: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US09 E2 — password policy rejects a password containing the email name", () => {
   assert.equal(isPasswordValid("ANA.lopez-2026!", email), false);
 });
 
-test("registration service sends a trimmed payload and returns the account state", async () => {
+// US09 E1: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US09 E1 — registration service sends a trimmed payload and returns the account state", async () => {
   let sent;
   const service = new RegistrationService({
     register: async (payload) => {
@@ -55,7 +59,8 @@ test("registration service sends a trimmed payload and returns the account state
   });
 });
 
-test("registration service rejects a weak password before calling the API", async () => {
+// US09 E2: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US09 E2 — registration service rejects a weak password before calling the API", async () => {
   let calls = 0;
   const service = new RegistrationService({
     register: async () => {
@@ -74,7 +79,8 @@ test("registration service rejects a weak password before calling the API", asyn
   assert.equal(calls, 0);
 });
 
-test("registration service rejects an unknown role before calling the API", async () => {
+// US09 E2: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US09 E2 — registration service rejects an unknown role before calling the API", async () => {
   const service = new RegistrationService({ register: async () => {} });
   await assert.rejects(
     service.register({
@@ -87,7 +93,8 @@ test("registration service rejects an unknown role before calling the API", asyn
   );
 });
 
-test("server errors keep their code so the form can show the right message", async () => {
+// US09 E3: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US09 E3 — server errors keep their code so the form can show the right message", async () => {
   const service = new RegistrationService({
     register: async () => {
       throw new ApiError(409, "emailTaken", "Email is already registered.");
@@ -104,19 +111,22 @@ test("server errors keep their code so the form can show the right message", asy
   );
 });
 
-test("display name accepts real names with accents, spaces, apostrophes and hyphens", () => {
+// US09 E1: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US09 E1 — display name accepts real names with accents, spaces, apostrophes and hyphens", () => {
   for (const name of ["Ana López", "María-José O'Brien", "Jhon Danny Guerrero Vasquez"]) {
     assert.equal(isDisplayNameValid(name), true, name);
   }
 });
 
-test("display name rejects numbers, negative values and symbols", () => {
+// US09 E2: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US09 E2 — display name rejects numbers, negative values and symbols", () => {
   for (const name of ["-5", "123", "Ana 2", "Ana@", "A", "   "]) {
     assert.equal(isDisplayNameValid(name), false, name);
   }
 });
 
-test("registration service rejects a numeric display name before calling the API", async () => {
+// US09 E2: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US09 E2 — registration service rejects a numeric display name before calling the API", async () => {
   let calls = 0;
   const service = new RegistrationService({
     register: async () => {

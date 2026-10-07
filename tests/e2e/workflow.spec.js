@@ -39,7 +39,8 @@ test("English default, Spanish persistence and responsive access screen", async 
     ),
   ).toBe(true);
 });
-test("IAM login authenticates a production account through the local API", async ({
+// US09/E3: login y cierre de sesión reales, sin interceptar respuestas.
+test("@live US09 E3 — IAM login authenticates a production account through the local API", async ({
   page,
 }) => {
   test.skip(
@@ -57,7 +58,8 @@ test("IAM login authenticates a production account through the local API", async
     page.getByRole("heading", { name: "Sign in to SmartQuote" }),
   ).toBeVisible();
 });
-test("manager can reopen a stored comparison and order without a browser-stored run ID", async ({ page }) => {
+// US08/E3, US11/E3: recuperación del documento guardado al recargar.
+test("@live US08 E3 US11 E3 — manager can reopen a stored comparison and order without a browser-stored run ID", async ({ page }) => {
   test.skip(
     process.env.SMARTQUOTE_E2E_READONLY !== "1" ||
       !process.env.SMARTQUOTE_BOOTSTRAP_PASSWORD ||
@@ -76,7 +78,8 @@ test("manager can reopen a stored comparison and order without a browser-stored 
   await page.getByRole("tab", { name: "Purchase order", exact: true }).click();
   await expect(page.locator(".order-document")).toBeVisible();
 });
-test("production creates a request and manager completes the purchasing workflow against the real API", async ({
+// US02-US08/US10/US11: vistas Vue y endpoints reales, extracción Stub explícita.
+test("@live US02 US03 US04 US05 US06 US07 US08 US10 US11 — production creates a request and manager completes the purchasing workflow against the real API", async ({
   page,
 }) => {
   test.skip(
@@ -187,13 +190,26 @@ test("production creates a request and manager completes the purchasing workflow
       exact: true,
     })
     .check();
-  await page
-    .getByRole("button", { name: "Approve and generate order", exact: true })
-    .click();
+  const [orderResponse] = await Promise.all([
+    page.waitForResponse((response) => response.request().method() === "POST" && /\/purchase-orders$/.test(new URL(response.url()).pathname)),
+    page.getByRole("button", { name: "Approve and generate order", exact: true }).click(),
+  ]);
+  expect(orderResponse.status()).toBe(201);
+  const approved = await orderResponse.json();
   await expect(
     page.getByRole("button", { name: "Print order", exact: true }),
   ).toBeVisible();
   await expect(page.getByText("Ordered", { exact: true }).first()).toBeVisible();
+  const document = page.locator(".order-document");
+  await expect(document).toContainText(approved.orderNumber);
+  await expect(document).toContainText(approved.supplierBusinessName);
+  await expect(document).toContainText(approved.supplierTaxIdentifier);
+  await expect(document).toContainText(approved.deliveryDestination);
+  await expect(document).toContainText(approved.deliveryConditions);
+  await expect(document).toContainText(approved.currency);
+  const pdf = await page.pdf({ path: ".local/order-approved.pdf", format: "A4", printBackground: true });
+  expect(pdf.subarray(0, 4).toString()).toBe("%PDF");
+  expect(pdf.length).toBeGreaterThan(1000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({

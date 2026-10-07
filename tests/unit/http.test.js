@@ -5,7 +5,8 @@ import {
   ApiError,
 } from "../../src/shared/infrastructure/http-client.js";
 import { HttpPurchaseRequestRepository } from "../../src/supply-requests/infrastructure/http-purchase-request.repository.js";
-test("HTTP repository sends expectedVersion and client accepts 204 without retries", async () => {
+// US03 E3 TS04 E1: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US03 E3 TS04 E1 — HTTP repository sends expectedVersion and client accepts 204 without retries", async () => {
   const original = globalThis.fetch;
   let captured,
     calls = 0;
@@ -35,7 +36,8 @@ test("HTTP repository sends expectedVersion and client accepts 204 without retri
     globalThis.fetch = original;
   }
 });
-test("401, 403 and 409 stay explicit and failed mutations are never retried", async () => {
+// TS02 E2 E3 TS04 E2: validación o contrato del cliente; los dobles no prueban persistencia.
+test("TS02 E2 E3 TS04 E2 — 401, 403 and 409 stay explicit and failed mutations are never retried", async () => {
   const original = globalThis.fetch;
   let calls = 0;
   try {

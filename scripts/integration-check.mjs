@@ -261,11 +261,43 @@ assert(
 passed("production notifications and read acknowledgement");
 const history = await manager.history(request.requestId);
 assert(history.entries.some((e) => e.toStatus === "Ordered"));
-passed("persistent audit trail");
+passed("US03 E3 persistent request status history");
+// US12/E1-E3: bitácora distinta al historial de estados, permisos y autor.
+const events = await manager.services.audit.timeline("PurchaseOrder", order.purchaseOrderId);
+assert(events.some((event) => event.action && event.actorId && event.occurredAt));
+await assert.rejects(analyst.services.audit.timeline("PurchaseOrder", order.purchaseOrderId), (error) => error.status === 403);
+passed("US12 E1 E2 E3 real audit timeline and role restriction");
+// US14/E1-E3: métricas se consultan antes de registrar entrega (solo órdenes Issued).
+const today = new Date().toISOString().slice(0, 10);
+const metrics = await manager.services.metrics.get(today, today);
+assert(metrics.orderCount >= 1);
+assert(metrics.timeSampleCount >= 1);
+assert(metrics.averageProcessingHours >= 0);
+const empty = await manager.services.metrics.get("2099-01-01", "2099-01-31");
+assert.equal(empty.orderCount, 0);
+assert.equal(empty.averageProcessingHours, null);
+assert.equal(empty.comparativeSavings, null);
+passed("US14 E1 E2 E3 persisted metrics, period filters and unavailable values");
+// US13/E1-E3: rechazo antes de entrega, evaluación, historial y duplicación.
+const evaluation = { onTimeScore: 5, qualityScore: 4, observations: "Web integration delivery" };
+await assert.rejects(analyst.services.orders.evaluateDelivery(order.purchaseOrderId, evaluation), (error) => error.status === 422);
+await analyst.services.orders.markDelivered(order.purchaseOrderId);
+const evaluated = await analyst.services.orders.evaluateDelivery(order.purchaseOrderId, evaluation);
+assert.equal(evaluated.purchaseOrderId, order.purchaseOrderId);
+assert(evaluated.evaluatedBy && evaluated.evaluatedAt);
+await assert.rejects(analyst.services.orders.evaluateDelivery(order.purchaseOrderId, evaluation), (error) => error.status === 409);
+// El Stub usa el identificador de proveedor entregado al cargar; no inventar un RUC.
+const supplierHistory = await fetch(`${base}/api/v1/suppliers/${order.supplierTaxIdentifier}/performance`, {
+  headers: { Authorization: `Bearer ${analyst.session.token}` },
+});
+assert.equal(supplierHistory.status, 200);
+const performance = await supplierHistory.json();
+assert(performance.evaluations.some((entry) => entry.purchaseOrderId === order.purchaseOrderId));
+passed("US13 E1 E2 E3 real delivery, persisted evaluation and supplier history");
 mkdirSync(".local", { recursive: true });
 const report = {
   timestamp: new Date().toISOString(),
-  backendCommit: "e0b4d9287108cc9699f1b1ff325351c6f259429f",
+  backendCommit: process.env.SMARTQUOTE_BACKEND_COMMIT ?? "local working tree (uncommitted)",
   api: base,
   extractionProvider:
     "Stub (repository development adapter; no real AI extraction asserted)",
@@ -279,12 +311,6 @@ writeFileSync(
   ".local/integration-result.json",
   JSON.stringify(report, null, 2),
 );
-writeFileSync(".local/manager-token.txt", manager.session.token, {
-  mode: 0o600,
-});
-writeFileSync(".local/production-token.txt", production.session.token, {
-  mode: 0o600,
-});
 console.log(
-  `Integration complete: ${checks.length} checks; order ${order.orderNumber}. Results and local session tokens are in ignored .local/.`,
+  `Integration complete: ${checks.length} checks; order ${order.orderNumber}. Non-secret results are in ignored .local/.`,
 );
