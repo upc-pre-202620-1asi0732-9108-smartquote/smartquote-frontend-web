@@ -69,7 +69,7 @@ onUnmounted(() => controller?.abort());
           <tr v-for="event in events" :key="event.auditEventId">
             <td>{{ format.date(event.occurredAt, true) }}</td>
             <td>{{ describe(event.action) }}</td>
-            <td class="identifier">{{ event.actorId.slice(0, 8) }}</td>
+            <td>{{ event.actorName || event.actorId.slice(0, 8) }}</td>
             <td>{{ event.reason || "—" }}</td>
           </tr>
         </tbody>
