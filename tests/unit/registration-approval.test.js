@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { RegistrationApprovalService } from "../../src/identity/application/registration-approval.service.js";
 
-test("approval sends the chosen role for a pending account", async () => {
+// US09 E1: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US09 E1 — approval sends the chosen role for a pending account", async () => {
   let sent;
   const service = new RegistrationApprovalService({
     pending: async () => [],
@@ -15,7 +16,8 @@ test("approval sends the chosen role for a pending account", async () => {
   assert.deepEqual(sent, { userId: "user-1", role: "PurchaseAnalyst" });
 });
 
-test("approval rejects an unknown role before calling the API", async () => {
+// US09 E1: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US09 E1 — approval rejects an unknown role before calling the API", async () => {
   let calls = 0;
   const service = new RegistrationApprovalService({
     pending: async () => [],
@@ -29,7 +31,8 @@ test("approval rejects an unknown role before calling the API", async () => {
   assert.equal(calls, 0);
 });
 
-test("pending list is returned unchanged from the repository", async () => {
+// US09 E1: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US09 E1 — pending list is returned unchanged from the repository", async () => {
   const rows = [{ userId: "u", email: "a@b.co", requestedRole: "PurchaseAnalyst" }];
   const service = new RegistrationApprovalService({
     pending: async () => rows,
@@ -38,7 +41,8 @@ test("pending list is returned unchanged from the repository", async () => {
   assert.deepEqual(await service.pending(), rows);
 });
 
-test("rejection sends only the account id to the reject endpoint", async () => {
+// US09 E1: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US09 E1 — rejection sends only the account id to the reject endpoint", async () => {
   let sent;
   const service = new RegistrationApprovalService({
     pending: async () => [],

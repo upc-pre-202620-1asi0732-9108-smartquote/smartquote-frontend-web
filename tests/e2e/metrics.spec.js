@@ -2,7 +2,8 @@ import { test, expect } from "@playwright/test";
 import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-test("manager filters metrics and sees unavailable indicators without fabricated values", async ({ page }) => {
+// US14/E1-E3: interfaz con contrato controlado; no prueba persistencia.
+test("US14 E1 E2 E3 — manager filters metrics and sees unavailable indicators without fabricated values", async ({ page }) => {
   await page.route("http://localhost:8080/api/v1/iam/auth/refresh", (route) =>
     route.fulfill({ status: 401, contentType: "application/json", body: "{}" }));
   await page.route("http://localhost:8080/api/v1/iam/auth/login", (route) =>
@@ -53,7 +54,7 @@ test("manager filters metrics and sees unavailable indicators without fabricated
   expect(periods.at(-1)).toEqual({ from: "2026-09-01", to: "2026-09-30" });
 });
 
-test("manager sees persisted metrics from a local API", async ({ page }) => {
+test("@optional-live US14 — manager sees persisted metrics from a local API", async ({ page }) => {
   test.skip(
     process.env.SMARTQUOTE_E2E_METRICS_REAL !== "1" || !process.env.SMARTQUOTE_JWT_KEY_FILE,
     "Requires the dedicated local API, test database and JWT signing key",

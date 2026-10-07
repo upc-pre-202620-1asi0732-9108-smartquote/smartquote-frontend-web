@@ -1,4 +1,6 @@
 import { defineConfig } from "@playwright/test";
+const port = Number(process.env.SMARTQUOTE_WEB_PORT || 5173);
+const localUrl = `http://localhost:${port}`;
 export default defineConfig({
   testDir: "tests/e2e",
   timeout: 120000,
@@ -8,7 +10,7 @@ export default defineConfig({
   reporter: "list",
   outputDir: ".local/playwright-results",
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: localUrl,
     channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
     headless: true,
     trace: "off",
@@ -16,9 +18,9 @@ export default defineConfig({
     viewport: { width: 1440, height: 1000 },
   },
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:5173",
-    reuseExistingServer: !process.env.CI,
+    command: `npm run dev -- --port ${port}`,
+    url: localUrl,
+    reuseExistingServer: !process.env.CI && !process.env.SMARTQUOTE_WEB_PORT,
     timeout: 30000,
   },
 });

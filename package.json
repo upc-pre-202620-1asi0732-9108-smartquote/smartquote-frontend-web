@@ -12,8 +12,11 @@
     "preview": "vite preview",
     "lint": "eslint src tests scripts vite.config.js eslint.config.js",
     "test": "node --test tests/unit/*.test.js",
+    "test:story": "node scripts/test-story.mjs",
     "test:integration": "node scripts/integration-check.mjs",
     "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --grep-invert \"@live|@optional-live\"",
+    "test:e2e:live": "node scripts/test-live.mjs",
     "token:dev": "node scripts/dev-token.mjs"
   },
   "dependencies": {

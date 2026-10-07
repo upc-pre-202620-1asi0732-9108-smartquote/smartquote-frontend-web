@@ -33,7 +33,7 @@ async function loginWithContracts(page, role) {
 }
 
 for (const role of ["PurchaseAnalyst", "PurchaseManager"]) {
-  test(`US15 ${role} sees supplier history with traceability`, async ({ page }) => {
+  test(`US13 ${role} sees supplier history with traceability`, async ({ page }) => {
     await loginWithContracts(page, role);
     await page.getByLabel("Tax identifier", { exact: true }).fill("20123456789");
     await page.getByRole("button", { name: "Look up supplier", exact: true }).click();
@@ -47,7 +47,7 @@ for (const role of ["PurchaseAnalyst", "PurchaseManager"]) {
   });
 }
 
-test("US15 analyst evaluates a delivered order without manager-only controls", async ({ page }) => {
+test("US13 analyst evaluates a delivered order without manager-only controls", async ({ page }) => {
   await loginWithContracts(page, "PurchaseAnalyst");
   const request = {
     requestId: id, status: "Ordered", version: 3, priority: "Normal",

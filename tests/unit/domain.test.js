@@ -38,7 +38,8 @@ const draft = () => ({
     },
   ],
 });
-test("requests reject missing mandatory requirements and invalid quantities", () => {
+// US02 E1 E2: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US02 E1 E2 — requests reject missing mandatory requirements and invalid quantities", () => {
   const invalid = draft();
   invalid.items[0].requirements[0].isMandatory = false;
   assert.throws(
@@ -53,7 +54,8 @@ test("requests reject missing mandatory requirements and invalid quantities", ()
   );
   assert.deepEqual(new RequestDraft(draft()).validate(), draft());
 });
-test("application validates before calling its injected repository", async () => {
+// US02 E2: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US02 E2 — application validates before calling its injected repository", async () => {
   let writes = 0;
   const service = new PurchaseRequestService({
     create: async (p) => {
@@ -68,7 +70,8 @@ test("application validates before calling its injected repository", async () =>
   await service.create(draft());
   assert.equal(writes, 1);
 });
-test("request transitions preserve terminal states and require a reason", () => {
+// US03 E2 E3: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US03 E2 E3 — request transitions preserve terminal states and require a reason", () => {
   const r = new PurchaseRequest({ status: "UnderReview" });
   assert.doesNotThrow(() =>
     r.assertTransition("QuotationCollection", "Reviewed"),
@@ -83,7 +86,8 @@ test("request transitions preserve terminal states and require a reason", () => 
   );
   assert.deepEqual(new PurchaseRequest({ status: "Ordered" }).nextStatuses, []);
 });
-test("quotation mappings cover every line; editable fields match API contract", () => {
+// US05 E1: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US05 E1 — quotation mappings cover every line; editable fields match API contract", () => {
   const q = new Quotation({
     lines: [
       { lineId: "a", quantity: 2, unitPrice: 30 },
@@ -101,7 +105,8 @@ test("quotation mappings cover every line; editable fields match API contract", 
   assert.equal(Quotation.editable("lines[0].specifications[0].value"), true);
   assert.equal(Quotation.editable("lines[0].unitPrice"), true);
 });
-test("all mandatory requirements survive defaults and weights must sum to 100", () => {
+// US06 E1 E2: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US06 E1 E2 — all mandatory requirements survive defaults and weights must sum to 100", () => {
   const c = defaultCriteria(draft());
   assert.equal(c[0].targetField, "protein");
   assert.equal(c[0].mode, "Mandatory");
@@ -112,7 +117,8 @@ test("all mandatory requirements survive defaults and weights must sum to 100", 
     (e) => e.code === "weights",
   );
 });
-test("simulation cannot approve a superseded scenario or unrelated request", () => {
+// US07 E2 US08 E2: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US07 E2 US08 E2 — simulation cannot approve a superseded scenario or unrelated request", () => {
   const run = new Simulation({
     scenarioId: "old",
     isCurrent: true,
@@ -142,7 +148,8 @@ test("simulation cannot approve a superseded scenario or unrelated request", () 
     (e) => e.code === "ineligible",
   );
 });
-test("order approval revalidates current simulation before persisting", async () => {
+// US08 E2: validación o contrato del cliente; los dobles no prueban persistencia.
+test("US08 E2 — order approval revalidates current simulation before persisting", async () => {
   let writes = 0;
   const orders = {
     approve: async () => {
@@ -160,7 +167,8 @@ test("order approval revalidates current simulation before persisting", async ()
   );
   assert.equal(writes, 0);
 });
-test("access only allows HTTPS or loopback HTTP; roles do not bypass backend validation", () => {
+// TS02 E1 E2 E3: validación o contrato del cliente; los dobles no prueban persistencia.
+test("TS02 E1 E2 E3 — access only allows HTTPS or loopback HTTP; roles do not bypass backend validation", () => {
   assert.equal(
     normalizeBaseUrl("http://localhost:8080/api/v1/"),
     "http://localhost:8080",
