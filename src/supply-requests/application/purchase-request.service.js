@@ -7,8 +7,8 @@ export class PurchaseRequestService {
   constructor(repository) {
     this.repository = repository;
   }
-  list(status, page, signal) {
-    return this.repository.list(status, page, signal);
+  list(status, page, signal, assignedToMe = false) {
+    return this.repository.list(status, page, signal, assignedToMe);
   }
   get(id, signal) {
     return this.repository.get(id, signal);
@@ -18,6 +18,15 @@ export class PurchaseRequestService {
   }
   create(data) {
     return this.repository.create(new RequestDraft(data).validate());
+  }
+  // US16: generated drafts are reviewed by their specialist before reaching purchasing.
+  editDraft(request, data) {
+    requireCondition(request.status === "Draft", "draftOnly");
+    return this.repository.editDraft(request, new RequestDraft(data).validate());
+  }
+  submitDraft(request) {
+    requireCondition(request.status === "Draft", "draftOnly");
+    return this.repository.submitDraft(request);
   }
   changeStatus(request, status, reason) {
     new PurchaseRequest(request).assertTransition(status, reason);

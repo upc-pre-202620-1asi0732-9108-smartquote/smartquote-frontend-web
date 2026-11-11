@@ -44,6 +44,21 @@ The access token remains only in browser memory. The refresh session uses an `Ht
 
 Versioned updates send expectedVersion. Conflicts require refreshing before another save. Approval rechecks the active evaluation scenario to reject superseded results.
 
+### AV2 stories (US15–US22)
+
+| Story | Where | Roles |
+| --- | --- | --- |
+| US15 Technical clarifications | Request › Clarifications tab; Clarifications inbox | Analyst asks; requesting specialist answers and may revise the requirement |
+| US16 Recurring requests | Recurring requests page; generated drafts are edited and sent from the request | Production specialist |
+| US17 Quotation expiry alerts | Expiry alerts page; expired offers are flagged in Quotations | Analyst |
+| US18 Supplier enablement | Supplier enablement page | Analyst reads; manager enables, suspends, reactivates |
+| US19 Sensitivity analysis | Request › Comparison tab | Manager |
+| US20 Acquisition budget | Request › Purchase order tab (budget and its contrast before approval) | Analyst reads; manager authorizes |
+| US21 Distributed purchase | Request › Comparison (simulate) and Purchase order (award, one order per supplier) | Analyst simulates; manager approves |
+| US22 Analyst assignment | Request detail; "Assigned to me" filter in the list | Manager assigns; analyst filters |
+
+The screens follow the backend contracts in `smartquote-web-services/docs` (`us15-us16-us22-api.md`, `us18-us20-api.md`, `us17-us19-us21-api.md`). Client checks give early feedback only; the API stays authoritative. Run `npm run test:story -- US18` for the unit tests of one story and `npx playwright test tests/e2e/us15-us22.spec.js` for the mocked screen contracts.
+
 ## Domain-driven structure
 
 ```text

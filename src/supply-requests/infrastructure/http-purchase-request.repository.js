@@ -5,12 +5,13 @@ export class HttpPurchaseRequestRepository extends PurchaseRequestRepository {
     super();
     this.http = http;
   }
-  async list(status = "", page = 1, signal) {
+  async list(status = "", page = 1, signal, assignedToMe = false) {
     return toRequestPage(
       await this.http.request(
         "/purchase-requests?" +
           new URLSearchParams({
             ...(status ? { status } : {}),
+            ...(assignedToMe ? { assignedToMe: "true" } : {}),
             page: String(page),
             pageSize: "12",
           }),
@@ -30,6 +31,22 @@ export class HttpPurchaseRequestRepository extends PurchaseRequestRepository {
       await this.http.request("/purchase-requests", {
         method: "POST",
         body: JSON.stringify(payload),
+      }),
+    );
+  }
+  async editDraft(request, payload) {
+    return toPurchaseRequest(
+      await this.http.request(`/purchase-requests/${request.requestId}/draft`, {
+        method: "PUT",
+        body: JSON.stringify({ ...payload, expectedVersion: request.version }),
+      }),
+    );
+  }
+  async submitDraft(request) {
+    return toPurchaseRequest(
+      await this.http.request(`/purchase-requests/${request.requestId}/submit`, {
+        method: "POST",
+        body: JSON.stringify({ expectedVersion: request.version }),
       }),
     );
   }

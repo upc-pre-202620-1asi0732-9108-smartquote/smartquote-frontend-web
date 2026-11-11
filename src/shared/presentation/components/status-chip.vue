@@ -5,11 +5,20 @@ import Tag from "primevue/tag";
 const props = defineProps({ value: { type: String, default: "" } });
 const { t, te } = useI18n();
 const severity = computed(() =>
-  ["Rejected", "Cancelled"].includes(props.value)
+  ["Rejected", "Cancelled", "Suspended", "SkippedExpired"].includes(props.value)
     ? "danger"
-    : ["Approved", "Ordered", "Verified", "Issued"].includes(props.value)
+    : [
+          "Approved",
+          "Ordered",
+          "Verified",
+          "Issued",
+          "Enabled",
+          "Answered",
+          "RevisionApplied",
+          "Generated",
+        ].includes(props.value)
       ? "success"
-      : ["RequiresVerification", "Evaluation", "UnderReview"].includes(
+      : ["RequiresVerification", "Evaluation", "UnderReview", "Pending", "Draft", "Paused"].includes(
             props.value,
           )
         ? "warn"

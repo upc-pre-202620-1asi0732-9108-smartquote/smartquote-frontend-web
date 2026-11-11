@@ -33,6 +33,13 @@ export class QuotationService {
       data.reason.trim() && Number(data.sourcePageNumber) > 0, "invalidRequirement");
     return this.repository.addSpecification(quote, lineId, data);
   }
+  // US17
+  expiryAlerts(unreadOnly = false, signal) {
+    return this.repository.expiryAlerts(unreadOnly, signal);
+  }
+  readExpiryAlert(id) {
+    return this.repository.readExpiryAlert(id);
+  }
   confirm(quote, mappings) {
     new Quotation(quote).assertMappings(mappings);
     return this.repository.confirm(quote, mappings);

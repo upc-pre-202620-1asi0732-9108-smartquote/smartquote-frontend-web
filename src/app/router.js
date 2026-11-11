@@ -17,9 +17,39 @@ export const router = createRouter({
         import("../supply-requests/presentation/pages/request-form.vue"),
     },
     {
+      path: "/requests/:id/edit",
+      meta: { roles: ["ProductionSpecialist"] },
+      component: () =>
+        import("../supply-requests/presentation/pages/request-form.vue"),
+    },
+    {
       path: "/requests/:id",
       component: () =>
         import("../supply-requests/presentation/pages/request-detail.vue"),
+    },
+    {
+      path: "/recurring-requests",
+      meta: { roles: ["ProductionSpecialist"] },
+      component: () =>
+        import("../supply-requests/presentation/pages/recurring-schedules.vue"),
+    },
+    {
+      path: "/clarifications",
+      meta: { roles: ["ProductionSpecialist"] },
+      component: () =>
+        import("../supply-requests/presentation/pages/clarification-inbox.vue"),
+    },
+    {
+      path: "/expiry-alerts",
+      meta: { roles: ["PurchaseAnalyst"] },
+      component: () =>
+        import("../quotation-intake/presentation/expiry-alert-list.vue"),
+    },
+    {
+      path: "/supplier-eligibility",
+      meta: { roles: ["PurchaseAnalyst", "PurchaseManager"] },
+      component: () =>
+        import("../purchase-ordering/presentation/supplier-eligibility-page.vue"),
     },
     {
       path: "/notifications",

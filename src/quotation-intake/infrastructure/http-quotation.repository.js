@@ -1,5 +1,6 @@
 import { QuotationRepository } from "../domain/quotation.repository.js";
 import { Quotation } from "../domain/quotation.entity.js";
+import { ExpiryAlert } from "../domain/expiry-alert.entity.js";
 export class HttpQuotationRepository extends QuotationRepository {
   constructor(http) {
     super();
@@ -43,6 +44,22 @@ export class HttpQuotationRepository extends QuotationRepository {
       `/quotations/${quote.quotationId}/lines/${lineId}/specifications`,
       { method: "POST", body: JSON.stringify({ ...data, expectedVersion: quote.version }) },
     );
+  }
+  async expiryAlerts(unreadOnly, signal) {
+    return (
+      await this.http.request(
+        "/quotation-expiry-alerts?" +
+          new URLSearchParams({
+            unreadOnly: String(Boolean(unreadOnly)),
+            page: "1",
+            pageSize: "100",
+          }),
+        { signal },
+      )
+    ).map((dto) => new ExpiryAlert(dto));
+  }
+  readExpiryAlert(id) {
+    return this.http.request(`/quotation-expiry-alerts/${id}/read`, { method: "PUT" });
   }
   confirm(quote, mappings) {
     return this.http.request(`/quotations/${quote.quotationId}/confirm`, {
