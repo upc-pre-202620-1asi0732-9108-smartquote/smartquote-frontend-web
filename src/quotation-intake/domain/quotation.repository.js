@@ -20,4 +20,10 @@ export class QuotationRepository {
   confirm() {
     throw new Error("Repository operation not implemented: confirm");
   }
+  expiryAlerts() {
+    throw new Error("Repository operation not implemented: expiryAlerts");
+  }
+  readExpiryAlert() {
+    throw new Error("Repository operation not implemented: readExpiryAlert");
+  }
 }

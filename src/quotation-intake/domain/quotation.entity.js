@@ -8,6 +8,10 @@ export class Quotation {
   get verified() {
     return this.status === "Verified";
   }
+  // US17: an expired offer is no longer current; reading alerts never extends it.
+  get expired() {
+    return this.commercialStatus === "Expired";
+  }
   get total() {
     return this.lines.some((l) => l.quantity == null || l.unitPrice == null)
       ? null

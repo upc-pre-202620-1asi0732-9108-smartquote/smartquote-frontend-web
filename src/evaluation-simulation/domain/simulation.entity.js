@@ -4,6 +4,10 @@ export class Simulation {
     Object.assign(this, data);
     this.evaluations = data.evaluations ?? [];
   }
+  // US21: the run assigns one supplier per item instead of a single winner.
+  get distributed() {
+    return this.mode === "DistributedByItem";
+  }
   reconcile(requestId, current, origin) {
     requireCondition(origin.requestId === requestId, "wrongRequest");
     return new Simulation({

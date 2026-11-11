@@ -7,6 +7,8 @@ import Message from "primevue/message";
 import { useWorkspace } from "../../shared/presentation/use-workspace.js";
 import { useFormat } from "../../shared/presentation/format.js";
 import { defaultCriteria } from "../domain/evaluation-scenario.entity.js";
+import DistributionResult from "./distribution-result.vue";
+import SensitivityPanel from "./sensitivity-panel.vue";
 const props = defineProps({
   request: { type: Object, required: true },
   quotes: { type: Array, required: true },
@@ -64,15 +66,28 @@ const winnerEvaluation = computed(() =>
     (evaluation) => evaluation.quotationId === winner.value?.quotationId,
   ),
 );
+async function savedScenario() {
+  let current = props.scenario;
+  if (!current || dirty.value) {
+    current = await services.value.evaluations.save(props.request.requestId, criteria.value, current);
+    emit("scenario", current);
+  }
+  return current;
+}
 async function run() {
   await props.execute(async () => {
-    let current = props.scenario;
-    if (!current || dirty.value) {
-      current = await services.value.evaluations.save(props.request.requestId, criteria.value, current);
-      emit("scenario", current);
-    }
+    const current = await savedScenario();
     await props.acceptRun(
       await services.value.evaluations.simulate(current.scenarioId),
+    );
+  });
+}
+// US21: one supplier per complete item instead of a single winner for the request.
+async function runDistributed() {
+  await props.execute(async () => {
+    const current = await savedScenario();
+    await props.acceptRun(
+      await services.value.evaluations.simulateDistributed(current, props.request),
     );
   });
 }
@@ -146,6 +161,13 @@ function friendlyExplanation(raw) {
         icon="pi pi-play"
         :disabled="busy || !canRun"
         @click="run"
+      /><Button
+        v-if="request.items.length > 1"
+        :label="t('runDistributed')"
+        icon="pi pi-sitemap"
+        outlined
+        :disabled="busy || !canRun"
+        @click="runDistributed"
       />
     </div>
     <p class="help-text">{{ t("comparisonHelp") }}</p>
@@ -176,6 +198,15 @@ function friendlyExplanation(raw) {
         </small>
       </div>
     </section>
+    <DistributionResult
+      v-if="simulation.distributed && simulation.distribution"
+      :request="request"
+      :quotes="quotes"
+      :simulation="simulation"
+      :busy="busy"
+      @order="emit('order')"
+    />
+    <template v-else>
     <div v-if="winner" class="recommendation">
       <span class="recommendation-icon"><i class="pi pi-trophy" /></span>
       <div>
@@ -261,7 +292,18 @@ function friendlyExplanation(raw) {
           ><strong>{{ format.score(result.weightedContribution) }}</strong>
         </div>
       </details>
-    </section></template
+    </section>
+    </template></template
   >
   <p v-else class="empty-state">{{ t("emptyComparison") }}</p>
+  <SensitivityPanel
+    v-if="session.manager"
+    :request="request"
+    :quotes="quotes"
+    :scenario="scenario"
+    :busy="busy"
+    :execute="execute"
+    :accept-run="acceptRun"
+    @scenario="(value) => emit('scenario', value)"
+  />
 </template>

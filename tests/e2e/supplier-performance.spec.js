@@ -66,8 +66,10 @@ test("US13 analyst evaluates a delivered order without manager-only controls", a
     let body;
     if (path.endsWith("/purchase-order")) body = order;
     else if (path.endsWith("/history")) body = { entries: [] };
-    else if (path.endsWith("/quotations") || path.endsWith("/simulations")) body = [];
-    else if (path.endsWith("/evaluation-scenario"))
+    else if (/\/(quotations|simulations|assignment-history|clarifications|requirement-revisions)$/.test(path)) body = [];
+    else if (path.endsWith("/budget")) body = { requestId: id, status: "NotConfigured", amountPen: null, version: null, revisions: [] };
+    // No award contract in this fixture: the page falls back to the single-order route.
+    else if (path.endsWith("/evaluation-scenario") || path.endsWith("/purchase-award"))
       return route.fulfill({ status: 404, contentType: "application/json", body: "{}" });
     else body = request;
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });

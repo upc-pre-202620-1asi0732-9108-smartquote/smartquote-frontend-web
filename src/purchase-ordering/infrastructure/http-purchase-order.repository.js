@@ -28,13 +28,17 @@ export class HttpPurchaseOrderRepository extends PurchaseOrderRepository {
     });
   }
 
-  async approve(run, quote, deliveryConditions, deliveryDestination) {
+  async approve(run, quote, deliveryConditions, deliveryDestination, expectedBudgetVersion) {
     return new PurchaseOrder(
       await this.http.request(
         `/simulations/${run}/quotations/${quote}/purchase-orders`,
         {
           method: "POST",
-          body: JSON.stringify({ deliveryConditions, deliveryDestination }),
+          body: JSON.stringify({
+            deliveryConditions,
+            deliveryDestination,
+            ...(expectedBudgetVersion == null ? {} : { expectedBudgetVersion }),
+          }),
         },
       ),
     );

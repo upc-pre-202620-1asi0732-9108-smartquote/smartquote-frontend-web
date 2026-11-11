@@ -8,6 +8,7 @@ import Select from "primevue/select";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import Paginator from "primevue/paginator";
+import Checkbox from "primevue/checkbox";
 import Status from "../../../shared/presentation/components/status-chip.vue";
 import Feedback from "../../../shared/presentation/components/feedback-notice.vue";
 import {
@@ -23,7 +24,10 @@ const { services, session } = useWorkspace(),
 const data = ref(null),
   search = ref(""),
   status = ref(""),
-  page = ref(1);
+  page = ref(1),
+  // US22: analysts can limit the list to the requests under their responsibility.
+  mine = ref(false);
+const analyst = session.value.hasRole("PurchaseAnalyst");
 let abort;
 async function load() {
   if (busy.value) return;
@@ -34,10 +38,11 @@ async function load() {
       status.value,
       page.value,
       abort.signal,
+      mine.value,
     );
   });
 }
-watch(status, () => {
+watch([status, mine], () => {
   page.value = 1;
   load();
 });
@@ -71,6 +76,7 @@ onUnmounted(() => abort?.abort());
         :options="
           [
             '',
+            ...(session.production ? ['Draft'] : []),
             'Submitted',
             'UnderReview',
             'QuotationCollection',
@@ -86,8 +92,13 @@ onUnmounted(() => abort?.abort());
         "
         option-label="label"
         option-value="value"
+        :placeholder="t('allStatuses')"
         :aria-label="t('status')"
-      /><Button
+      /><label v-if="analyst" class="check-label" for="assigned-to-me"
+        ><Checkbox input-id="assigned-to-me" v-model="mine" binary :disabled="busy" />{{
+          t("assignedToMe")
+        }}</label
+      ><Button
         icon="pi pi-refresh"
         :label="t('refresh')"
         outlined
@@ -121,7 +132,16 @@ onUnmounted(() => abort?.abort());
         ></Column
       ><Column :header="t('status')"
         ><template #body="{ data: row }"
-          ><Status :value="row.status" /></template></Column
+          ><Status :value="row.status" /><small
+            v-if="session.purchasing && row.isActive && !row.assignedAnalystId"
+            class="muted block"
+            >{{ t("unassigned") }}</small
+          ><small
+            v-else-if="row.assignedAnalystId === session.userId"
+            class="muted block"
+            >{{ t("assignedToYou") }}</small
+          ></template
+        ></Column
       ><Column :header="t('priority')"
         ><template #body="{ data: row }">{{
           t("priorities." + row.priority)
