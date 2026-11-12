@@ -19,12 +19,21 @@ export class PurchaseOrderService {
     return this.repository.evaluateDelivery(orderId, evaluation);
   }
 
-  async approve(requestId, runId, quoteId, conditions, destination) {
+  // US20: when a budget check was shown, its version travels with the approval so an
+  // outdated check is rejected. The API always validates the current budget.
+  async approve(requestId, runId, quoteId, conditions, destination, check = null) {
     const current = await this.evaluationService.currentSimulation(
       requestId,
       runId,
     );
     PurchaseOrder.validateApproval(current, quoteId, destination, conditions);
-    return this.repository.approve(runId, quoteId, conditions, destination);
+    check?.assertApprovable();
+    return this.repository.approve(
+      runId,
+      quoteId,
+      conditions,
+      destination,
+      check?.budgetVersion,
+    );
   }
 }

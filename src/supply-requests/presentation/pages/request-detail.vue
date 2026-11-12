@@ -24,6 +24,9 @@ import QuotationPanel from "../../../quotation-intake/presentation/quotation-pan
 import ComparisonPanel from "../../../evaluation-simulation/presentation/comparison-panel.vue";
 import OrderPanel from "../../../purchase-ordering/presentation/order-panel.vue";
 import AuditTimeline from "../../../purchase-ordering/presentation/audit-timeline.vue";
+import AssignmentPanel from "../components/assignment-panel.vue";
+import ClarificationPanel from "../components/clarification-panel.vue";
+import Message from "primevue/message";
 const { t } = useI18n(),
   format = useFormat(),
   route = useRoute(),
@@ -37,24 +40,32 @@ const id = route.params.id,
   scenario = ref(null),
   simulation = ref(null),
   simulations = ref([]),
-  order = ref(null);
-const tab = ref("request"),
+  order = ref(null),
+  award = ref(null);
+const tabs = ["request", "clarifications", "quotes", "comparison", "order", "trail", "history"];
+const tab = ref(tabs.includes(route.query.tab) ? route.query.tab : "request"),
   dialog = ref(false),
   nextStatus = ref(""),
   reason = ref("");
 const abort = new AbortController();
 async function refresh() {
   const api = services.value;
-  const [r, h, q, s, runs, existingOrder] = await Promise.all([
-    api.requests.get(id, abort.signal),
+  const r = await api.requests.get(id, abort.signal);
+  // US16: a draft is private to its specialist and has no purchasing data yet.
+  const purchasing = session.value.purchasing && !r.isDraft;
+  const [h, q, s, runs, existingAward] = await Promise.all([
     api.requests.history(id, abort.signal),
-    session.value.purchasing ? api.quotations.list(id, abort.signal) : [],
-    session.value.purchasing
-      ? optional(api.evaluations.current(id, abort.signal))
-      : null,
-    session.value.purchasing ? api.evaluations.listForRequest(id, abort.signal) : [],
-    session.value.purchasing ? optional(api.orders.findByRequest(id, abort.signal)) : null,
+    purchasing ? api.quotations.list(id, abort.signal) : [],
+    purchasing ? optional(api.evaluations.current(id, abort.signal)) : null,
+    purchasing ? api.evaluations.listForRequest(id, abort.signal) : [],
+    purchasing ? optional(api.awards.findByRequest(id, abort.signal)) : null,
   ]);
+  // US21: an award may hold several orders; the single-order route is only a fallback.
+  const existingOrder = existingAward
+    ? existingAward.singleOrder
+    : purchasing
+      ? await optional(api.orders.findByRequest(id, abort.signal))
+      : null;
   request.value = r;
   history.value = h.entries;
   quotes.value = q;
@@ -63,6 +74,13 @@ async function refresh() {
   simulation.value = runs.find((run) => run.simulationRunId === simulation.value?.simulationRunId)
     ?? runs[0] ?? null;
   order.value = existingOrder;
+  award.value = existingAward;
+}
+async function submitDraft() {
+  await execute(async () => {
+    await services.value.requests.submitDraft(request.value);
+    await refresh();
+  }, t("draftSubmitted"));
 }
 async function acceptRun(run) {
   simulation.value = run;
@@ -137,6 +155,19 @@ onUnmounted(() => abort.abort());
           :loading="busy"
           @click="execute(refresh)"
         /><Button
+          v-if="session.production && request.isDraft"
+          :label="t('editDraft')"
+          icon="pi pi-pencil"
+          outlined
+          :disabled="busy"
+          @click="router.push('/requests/' + id + '/edit')"
+        /><Button
+          v-if="session.production && request.isDraft"
+          :label="t('submitDraft')"
+          icon="pi pi-send"
+          :disabled="busy"
+          @click="submitDraft"
+        /><Button
           v-if="session.purchasing && ['Submitted', 'UnderReview', 'QuotationCollection'].includes(request.status)"
           :label="request.status === 'QuotationCollection' ? t('startEvaluation') : t('startQuotations')"
           :disabled="busy || (request.status === 'QuotationCollection' && quotes.filter((q) => q.verified).length < 2)"
@@ -152,6 +183,7 @@ onUnmounted(() => abort.abort());
         />
       </div>
     </div>
+    <Message v-if="request.isDraft" severity="info">{{ t("draftNotice") }}</Message>
     <ol class="workflow" :aria-label="t('status')">
       <li
         v-for="(step, index) in [
@@ -173,6 +205,7 @@ onUnmounted(() => abort.abort());
     <Tabs v-model:value="tab"
       ><TabList
         ><Tab value="request">{{ t("request") }}</Tab
+        ><Tab v-if="!request.isDraft" value="clarifications">{{ t("clarifications") }}</Tab
         ><Tab v-if="session.purchasing" value="quotes"
           >{{ t("quotations") }} ({{ quotes.length }})</Tab
         ><Tab v-if="session.purchasing" value="comparison">{{
@@ -223,6 +256,13 @@ onUnmounted(() => abort.abort());
                   <dd>{{ format.date(request.updatedAt, true) }}</dd>
                 </dl>
               </section>
+              <AssignmentPanel
+                v-if="session.purchasing && !request.isDraft"
+                :request="request"
+                :busy="busy"
+                :execute="execute"
+                :refresh="refresh"
+              />
               <section class="panel">
                 <h2>{{ t("attachments") }}</h2>
                 <p class="help-text">{{ t("attachmentHelp") }}</p>
@@ -250,6 +290,13 @@ onUnmounted(() => abort.abort());
               </section>
             </aside></div
         ></TabPanel>
+        <TabPanel v-if="!request.isDraft" value="clarifications"
+          ><ClarificationPanel
+            :request="request"
+            :busy="busy"
+            :execute="execute"
+            :refresh="refresh"
+        /></TabPanel>
         <TabPanel v-if="session.purchasing" value="quotes"
           ><QuotationPanel
             :request="request"
@@ -283,6 +330,7 @@ onUnmounted(() => abort.abort());
             :quotes="quotes"
             :simulation="simulation"
             :order="order"
+            :award="award"
             :busy="busy"
             :execute="execute"
             :refresh="refresh"
@@ -306,6 +354,10 @@ onUnmounted(() => abort.abort());
               />
             </div>
             <p v-if="order">{{ t('purchaseOrder') }}: {{ order.orderNumber }}</p>
+            <p v-else-if="award">
+              {{ t('purchaseOrder') }}:
+              {{ award.orders.map((entry) => entry.orderNumber).join(", ") }}
+            </p>
             <p v-if="!history.length" class="empty-state">
               {{ t("historyEmpty") }}
             </p>
@@ -317,7 +369,10 @@ onUnmounted(() => abort.abort());
               <i class="pi pi-clock" />
               <div>
                 <div class="inline-row">
-                  <Status v-if="entry.fromStatus" :value="entry.fromStatus" /><i
+                  <Status
+                    v-if="entry.fromStatus"
+                    :value="entry.fromStatus === 'Draft' && !request.scheduleOccurrenceId ? 'Registered' : entry.fromStatus"
+                  /><i
                     class="pi pi-arrow-right"
                   /><Status :value="entry.toStatus" />
                 </div>

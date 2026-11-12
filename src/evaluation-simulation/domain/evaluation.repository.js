@@ -17,4 +17,16 @@ export class EvaluationRepository {
   listForRequest() {
     throw new Error("Repository operation not implemented: listForRequest");
   }
+  simulateDistributed() {
+    throw new Error("Repository operation not implemented: simulateDistributed");
+  }
+  createSensitivity() {
+    throw new Error("Repository operation not implemented: createSensitivity");
+  }
+  sensitivityAnalyses() {
+    throw new Error("Repository operation not implemented: sensitivityAnalyses");
+  }
+  promoteSensitivity() {
+    throw new Error("Repository operation not implemented: promoteSensitivity");
+  }
 }

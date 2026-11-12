@@ -23,4 +23,10 @@ export class PurchaseRequestRepository {
   readNotification() {
     throw new Error("Repository operation not implemented: readNotification");
   }
+  editDraft() {
+    throw new Error("Repository operation not implemented: editDraft");
+  }
+  submitDraft() {
+    throw new Error("Repository operation not implemented: submitDraft");
+  }
 }

@@ -214,7 +214,12 @@ async function confirm() {
         ></Column
       ><Column :header="t('status')"
         ><template #body="{ data: q }"
-          ><Status :value="q.status" /></template></Column
+          ><Status :value="q.status" /><small
+            v-if="q.expired"
+            class="invalid block"
+            >{{ t("commercial.Expired") }}</small
+          ></template
+        ></Column
       ><Column :header="t('total')"
         ><template #body="{ data: q }">{{
           format.money(q.total, q.currency || "PEN")
@@ -242,6 +247,9 @@ async function confirm() {
       <div>
         <h2>{{ selected.supplierBusinessName || t('supplierPending') }}</h2>
         <Status :value="selected.status" />
+        <small v-if="selected.expired" class="invalid block">{{
+          t("expiredQuotationNote")
+        }}</small>
       </div>
       <Button
         icon="pi pi-times"

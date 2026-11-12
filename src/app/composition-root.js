@@ -18,6 +18,20 @@ import { AuditTrailService } from "../purchase-ordering/application/audit-trail.
 import { HttpAuditTrailRepository } from "../purchase-ordering/infrastructure/http-audit-trail.repository.js";
 import { SupplierPerformanceService } from "../purchase-ordering/application/supplier-performance.service.js";
 import { HttpSupplierPerformanceRepository } from "../purchase-ordering/infrastructure/http-supplier-performance.repository.js";
+import { RequestCollaborationService } from "../supply-requests/application/request-collaboration.service.js";
+import { HttpRequestCollaborationRepository } from "../supply-requests/infrastructure/http-request-collaboration.repository.js";
+import { RecurringScheduleService } from "../supply-requests/application/recurring-schedule.service.js";
+import { HttpRecurringScheduleRepository } from "../supply-requests/infrastructure/http-recurring-schedule.repository.js";
+import {
+  PurchaseBudgetService,
+  SupplierEligibilityService,
+} from "../purchase-ordering/application/ordering-policy.service.js";
+import { PurchaseAwardService } from "../purchase-ordering/application/purchase-award.service.js";
+import {
+  HttpPurchaseAwardRepository,
+  HttpPurchaseBudgetRepository,
+  HttpSupplierEligibilityRepository,
+} from "../purchase-ordering/infrastructure/http-ordering-policy.repository.js";
 export function createSessionService() {
   return new SessionService(new AuthApiRepository());
 }
@@ -40,6 +54,15 @@ export function createServices(session) {
     metrics: new PurchasingMetricsService(new HttpPurchasingMetricsRepository(http)),
     audit: new AuditTrailService(new HttpAuditTrailRepository(http)),
     suppliers: new SupplierPerformanceService(new HttpSupplierPerformanceRepository(http)),
+    collaboration: new RequestCollaborationService(
+      new HttpRequestCollaborationRepository(http),
+    ),
+    schedules: new RecurringScheduleService(new HttpRecurringScheduleRepository(http)),
+    eligibility: new SupplierEligibilityService(
+      new HttpSupplierEligibilityRepository(http),
+    ),
+    budgets: new PurchaseBudgetService(new HttpPurchaseBudgetRepository(http)),
+    awards: new PurchaseAwardService(new HttpPurchaseAwardRepository(http), evaluations),
     registrations: new RegistrationApprovalService(
       new HttpRegistrationApprovalRepository(http),
     ),

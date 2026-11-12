@@ -18,6 +18,13 @@ export class PurchaseRequest {
   get nextStatuses() {
     return transitions[this.status] ?? [];
   }
+  get isDraft() {
+    return this.status === "Draft";
+  }
+  // Closed and draft requests cannot be assigned, clarified or budgeted.
+  get isActive() {
+    return !["Draft", "Ordered", "Rejected", "Cancelled"].includes(this.status);
+  }
   get acceptsQuotations() {
     return ["QuotationCollection", "Evaluation"].includes(this.status);
   }

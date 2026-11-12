@@ -107,11 +107,31 @@ const links = computed(() => [
           label: t("newRequest"),
           icon: "pi pi-plus-circle",
         },
+        {
+          to: "/recurring-requests",
+          label: t("schedulesTitle"),
+          icon: "pi pi-calendar-clock",
+        },
+        {
+          to: "/clarifications",
+          label: t("clarificationInbox"),
+          icon: "pi pi-comments",
+        },
         { to: "/notifications", label: t("notifications"), icon: "pi pi-bell" },
       ]
     : []),
+  ...(session.value?.hasRole("PurchaseAnalyst")
+    ? [{ to: "/expiry-alerts", label: t("expiryAlerts"), icon: "pi pi-clock" }]
+    : []),
   ...(session.value?.purchasing
-    ? [{ to: "/suppliers", label: t("suppliersTitle"), icon: "pi pi-truck" }]
+    ? [
+        { to: "/suppliers", label: t("suppliersTitle"), icon: "pi pi-truck" },
+        {
+          to: "/supplier-eligibility",
+          label: t("eligibilityTitle"),
+          icon: "pi pi-verified",
+        },
+      ]
     : []),
   ...(session.value?.manager
     ? [
